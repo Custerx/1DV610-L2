@@ -20,7 +20,7 @@ class LoginView {
 	 * @return  void BUT writes to standard output and cookies!
 	 */
 	public function response() {
-		$message = $this->isUserNameMissing();
+		$message = $this->isUserNameMissing() != '' ? "{$this->isUserNameMissing()}" : "{$this->isPasswordMissing()}";
 		
 		$response = $this->generateLoginFormHTML($message);
 		//$response .= $this->generateLogoutButtonHTML($message);
@@ -54,7 +54,7 @@ class LoginView {
 					<p id="' . self::$messageId . '">' . $message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
-					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="" />
+					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getUserName() . '" />
 
 					<label for="' . self::$password . '">Password :</label>
 					<input type="password" id="' . self::$password . '" name="' . self::$password . '" />
@@ -83,6 +83,30 @@ class LoginView {
 			return '';
 		} else {
 			return 'Username is missing';
+		}
+	}
+
+	/**
+	 * Checks if password is missing.
+	 *
+	 * @return string '' else 'Password is missing'
+	 */
+	private function isPasswordMissing() {
+		if (isset($_POST[self::$password]) && $_POST[self::$password] != "") {
+			return '';
+		} else {
+			return 'Password is missing';
+		}
+	}
+
+	/**
+	 * Returns username if it has been posted.
+	 *
+	 * @return void
+	 */
+	private function getUserName() {
+		if (isset($_POST[self::$name]) && $_POST[self::$name] != "") {
+			return $_POST[self::$name];
 		}
 	}
 }
