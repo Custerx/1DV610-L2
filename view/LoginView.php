@@ -21,7 +21,8 @@ class LoginView {
 	 */
 	public function response() {
 		$message = $this->isUserNameMissing() != '' ? "{$this->isUserNameMissing()}" : "{$this->isPasswordMissing()}";
-		
+		$message = strlen($message) > 0 ? $message : $this->wrongUsernameOrPassword();
+	
 		$response = $this->generateLoginFormHTML($message);
 		//$response .= $this->generateLogoutButtonHTML($message);
 		return $response;
@@ -54,7 +55,7 @@ class LoginView {
 					<p id="' . self::$messageId . '">' . $message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
-					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getUserName() . '" />
+					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getRequestUserName() . '" />
 
 					<label for="' . self::$password . '">Password :</label>
 					<input type="password" id="' . self::$password . '" name="' . self::$password . '" />
@@ -71,6 +72,16 @@ class LoginView {
 	//CREATE GET-FUNCTIONS TO FETCH REQUEST VARIABLES
 	private function getRequestUserName() {
 		//RETURN REQUEST VARIABLE: USERNAME
+		if (isset($_REQUEST[self::$name])) {
+			return $_REQUEST[self::$name];
+		}
+	}
+
+	private function getRequestPassword() {
+		//RETURN REQUEST VARIABLE: USERNAME
+		if (isset($_REQUEST[self::$password])) {
+			return $_REQUEST[self::$password];
+		}
 	}
 	
 	/**
@@ -100,13 +111,14 @@ class LoginView {
 	}
 
 	/**
-	 * Returns username if it has been posted.
+	 * Checks if username and password have been posted.
 	 *
-	 * @return void
+	 * @return string 'Wrong name or password'
 	 */
-	private function getUserName() {
-		if (isset($_POST[self::$name]) && $_POST[self::$name] != "") {
-			return $_POST[self::$name];
+	private function wrongUsernameOrPassword() {
+		if ($this->getRequestUserName() && $this->getRequestPassword()) {
+			// Also check if isLoggedIn - how?
+			return 'Wrong name or password';
 		}
 	}
 }
