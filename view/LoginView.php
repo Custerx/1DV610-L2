@@ -9,8 +9,21 @@ class LoginView {
 	private static $cookiePassword = 'LoginView::CookiePassword';
 	private static $keep = 'LoginView::KeepMeLoggedIn';
 	private static $messageId = 'LoginView::Message';
-
 	
+	private static $setUserName = "Admin";
+	private static $setPassword = "Password";
+	private static $SESSION_MSG;
+	private $message = "";
+	private $session;
+	
+	/**
+	 * Construct function
+	 *
+	 * @param \Model\Session $startSession
+	 */
+	public function __construct(\Model\Session $startSession) {
+		$this->session = $startSession;
+	}
 
 	/**
 	 * Create HTTP response
@@ -20,12 +33,25 @@ class LoginView {
 	 * @return  void BUT writes to standard output and cookies!
 	 */
 	public function response() {
-		$message = $this->isUserNameMissing() != '' ? "{$this->isUserNameMissing()}" : "{$this->isPasswordMissing()}";
-		$message = strlen($message) > 0 ? $message : $this->wrongUsernameOrPassword();
-	
+		$this->validation();
+
+		$this->session->setSessionKey("message", $this->message);
+		$message = $this->session->getSessionKey("message");
+		$this->session->unsetSessionKey("message");
+		
 		$response = $this->generateLoginFormHTML($message);
-		//$response .= $this->generateLogoutButtonHTML($message);
+		
+		if ($this->authentication()) {
+			$response = $this->generateLogoutButtonHTML($message);	
+		}
+
 		return $response;
+	}
+
+	private function logout() {
+		if ($this->authentication()) {
+			$this->session->destroy();
+		}
 	}
 
 	/**
@@ -70,55 +96,75 @@ class LoginView {
 	}
 	
 	//CREATE GET-FUNCTIONS TO FETCH REQUEST VARIABLES
-	private function getRequestUserName() {
+	private function getRequestUserName() {		
 		//RETURN REQUEST VARIABLE: USERNAME
-		if (isset($_REQUEST[self::$name])) {
+		if ($this->hasUserName()) {
 			return $_REQUEST[self::$name];
 		}
 	}
 
 	private function getRequestPassword() {
-		//RETURN REQUEST VARIABLE: USERNAME
-		if (isset($_REQUEST[self::$password])) {
+		//RETURN REQUEST VARIABLE: PASSWORD
+		if ($this->hasPassword()) {
 			return $_REQUEST[self::$password];
 		}
 	}
-	
-	/**
-	 * Checks if username is missing.
-	 *
-	 * @return string '' else 'Username is missing'
-	 */
-	private function isUserNameMissing() {
-		if (isset($_POST[self::$name]) && $_POST[self::$name] != "") {
-			return '';
-		} else {
-			return 'Username is missing';
+
+	private function hasUserName() : bool {
+		return (isset($_REQUEST[self::$name]) && !$this->hasNoUserName());
+	}
+
+	private function hasPassword() : bool {
+		return (isset($_REQUEST[self::$password]) && !$this->hasNoPassword());
+	}	
+
+	private function hasNoUserName() : bool {
+		return empty($_POST[self::$name]);
+	}
+
+	private function hasNoPassword() : bool {
+		return empty($_POST[self::$password]);
+	}
+
+	public function authentication() : bool {
+		return ($this->getRequestPassword() == self::$setPassword && $this->getRequestUserName() == self::$setUserName);
+	}
+
+	public function loadSessionMessage() {
+		if (isset($_SESSION[self::$SESSION_MSG])) {
+			$MSG = $_SESSION[self::$SESSION_MSG];
+			unset($_SESSION[self::$SESSION_MSG]);
+			return $MSG;
 		}
 	}
 
-	/**
-	 * Checks if password is missing.
-	 *
-	 * @return string '' else 'Password is missing'
-	 */
-	private function isPasswordMissing() {
-		if (isset($_POST[self::$password]) && $_POST[self::$password] != "") {
-			return '';
-		} else {
-			return 'Password is missing';
-		}
+	public function saveSessionMessage($toBeSaved) {
+		$_SESSION[self::$SESSION_MSG] = $toBeSaved;
+	}
+
+	public function loadMessage() {
+		return $this->message;
 	}
 
 	/**
-	 * Checks if username and password have been posted.
+	 * Checks username and password input.
 	 *
-	 * @return string 'Wrong name or password'
+	 * @return string
 	 */
-	private function wrongUsernameOrPassword() {
-		if ($this->getRequestUserName() && $this->getRequestPassword()) {
+	private function validation() {
+		if ($this->hasNoUserName() && $this->hasPassword()) {
+			$this->message = 'Username is missing';
+		} else if ($this->hasUserName() && $this->hasNoPassword()) {
+			$this->message = 'Password is missing';
+		} else if ($this->hasUserName() && $this->hasPassword()) {
 			// Also check if isLoggedIn - how?
-			return 'Wrong name or password';
+			if ($this->authentication()) {
+				$this->message = 'Welcome';
+			} else {
+				$this->message = 'Wrong name or password';
+			}
+		} else {
+			$this->message = '';
 		}
 	}
 }
