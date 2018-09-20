@@ -4,7 +4,7 @@ class DateTimeView {
 	private static $TIMEZONE = "Europe/Paris";
 
 	public function show() {
-		date_default_timezone_set(self::$TIMEZONE);// Considered side effect? Maybe put it in the constructor?
+		date_default_timezone_set(self::$TIMEZONE); // Considered side effect? Maybe put it in the constructor?
 		$timeString = date("l") . ', the ' . date("d") . 'th of ' . $this->getMonthAsText() . ' ' . date("Y") . ', The time is ' . date("H:i:s");
 
 		return '<p>' . $timeString . '</p>';

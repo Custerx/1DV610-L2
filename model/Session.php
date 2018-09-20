@@ -17,9 +17,9 @@ class Session {
 	}
 	
 	public function unsetSessionKey($sessionData) {
-		if (isset($sessionData)) {
+		if (isset($_SESSION[$sessionData])) {
 			// Remove a key from SESSION
-			unset($sessionData);
+			unset($_SESSION[$sessionData]);
 		}
 	}
 
@@ -29,7 +29,9 @@ class Session {
 	}
 
 	public function getSessionKey($sessionData) {
+		if (isset($_SESSION[$sessionData])) {
 		// Get a key from SESSION
-		return $_SESSION[$sessionData];
+			return $_SESSION[$sessionData];
+		}
 	}
 }
