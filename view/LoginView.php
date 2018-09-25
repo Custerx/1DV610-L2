@@ -1,5 +1,7 @@
 <?php
 
+namespace View;
+
 class LoginView {
 	private static $login = 'LoginView::Login';
 	private static $logout = 'LoginView::Logout';
@@ -21,7 +23,6 @@ class LoginView {
 	public function __construct(\Model\Session $startSession, \Model\Auth $auth) {
 		$this->session = $startSession;
 		$this->authModel = $auth;
-		$this->validateUserCredentials();
 	}
 
 	/**
@@ -33,12 +34,11 @@ class LoginView {
 	 */
 	public function response() {
 		$message = $this->authModel->loadMessage();
-		
-		if ($this->isLoggingOut()) {
+		/*
+		if ($this->userWantsToLogout()) {
 			$message = $this->authModel->logoutMessage();
-
 		}
-
+		*/
 		$response = $this->generateLoginFormHTML($message);
 		
 		if ($this->authModel->authentication()) {
@@ -75,7 +75,7 @@ class LoginView {
 					<p id="' . self::$messageId . '">' . $message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
-					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getUserName() . '" />
+					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->session->getSessionKey("sessionUserName") . '" />
 
 					<label for="' . self::$password . '">Password :</label>
 					<input type="password" id="' . self::$password . '" name="' . self::$password . '"  />
@@ -88,42 +88,45 @@ class LoginView {
 			</form>
 		';
 	}
-
-	private function validateUserCredentials() {
-		// Saves username to the controller login.
-		if ($this->hasUserName()) {
-			$this->authModel->setUser($_REQUEST[self::$name]);	
-		}
-		;
-
-		// Saves password to the controller login.
-		if ($this->hasPassword()) {
-			$this->authModel->setPassword($_REQUEST[self::$password]);
-		}
-
-		if ($this->isLoggingOut()) {
-			$this->authModel->setUser("");
-			$this->authModel->setPassword("");
-		}
-		// Calls validation method
-		$this->authModel->validation();
+	public function userWantsToLogin() : bool {
+		return (isset($_POST[self::$login]) && $_POST[self::$login] == 'login');
 	}
 
+	public function userWantsToLogout() : bool {
+		return (isset($_POST[self::$logout]) && $_POST[self::$logout] == 'logout');
+	}
+
+	public function resetUserCredentials() {
+		$_POST[self::$name] = '';
+		$_POST[self::$password] = '';
+	}
+
+	public function getUserCredentials() {
+		$inputUserName = '';
+		$inputPassword = '';
+
+		if ($this->hasUserName()) {
+			$inputUserName = $_POST[self::$name];	
+		}
+
+		if ($this->hasPassword()) {
+			$inputPassword = $_POST[self::$password];
+		}
+
+		return array($inputUserName, $inputPassword);
+	}
+/*
 	private function getUserName() {
 		if ($this->hasUserName()) {
-			return $_REQUEST[self::$name];
+			return $_POST[self::$name];
 		}
 	}
-
+*/
 	private function hasUserName() : bool {
-		return (isset($_REQUEST[self::$name]) && !empty($_REQUEST[self::$name]));
+		return (isset($_POST[self::$name]) && !empty($_POST[self::$name]));
 	}
 
 	private function hasPassword() : bool {
-		return (isset($_REQUEST[self::$password]) && !empty($_REQUEST[self::$password]));
-	}
-
-	private function isLoggingOut() : bool {
-		return (isset($_POST[self::$logout]));
+		return (isset($_POST[self::$password]) && !empty($_POST[self::$password]));
 	}
 }

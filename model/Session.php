@@ -32,6 +32,8 @@ class Session {
 		if (isset($_SESSION[$sessionData])) {
 		// Get a key from SESSION
 			return $_SESSION[$sessionData];
+		} else {
+			return "";
 		}
 	}
 }
