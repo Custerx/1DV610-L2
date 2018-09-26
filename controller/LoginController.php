@@ -20,15 +20,15 @@ class LoginController {
         // CREATE OBJECTS OF THE VIEWS
         $this->loginView = new \View\LoginView($this->session, $this->authorization);
         $this->dateTimeView = new \View\DateTimeView();
-        $this->layoutView = new \View\LayoutView();
-        $this->registerView = new \View\RegisterView();
+        $this->layoutView = new \View\LayoutView($this->registerModel, $this->session);
+        $this->registerView = new \View\RegisterView($this->registerModel, $this->session);
     }
 
     public function routerHandler() {
         if ($this->registerView->wantsToRegisterV2()) {
             $this->doRegisterManagement();
         } else if (!empty($_POST)) {
-            $this->doUserManagement();
+            $this->doLoginManagement();
         } else {
             $this->renderView();
         }
@@ -38,10 +38,11 @@ class LoginController {
         if ($this->registerView->userWantsToRegister()) {
             $credentials = $this->registerView->getRegisterCredentials();
             $this->registerModel->registerWithCredentials($credentials);
-            // $this->session->setSessionMessage($this->authorization->validationMessage());
+            $this->session->setSessionMessage($this->registerModel->registerMessage());
 
             $this->renderRegisterView();
         } else {
+            $this->session->setSessionMessage('');
             $this->renderRegisterView();
         }
     }
@@ -50,7 +51,7 @@ class LoginController {
         return $this->layoutView->renderRegister(false, $this->registerView, $this->dateTimeView);
     }
 
-    private function doUserManagement() {
+    private function doLoginManagement() {
         if ($this->loginView->userWantsToLogin()) {
             $credentials = $this->loginView->getUserCredentials();
             $this->authorization->loginWithCredentials($credentials);
@@ -66,7 +67,7 @@ class LoginController {
             $this->session->destroy();
             $this->renderView();
         } else {
-            $this->session->setSessionMessage($this->authorization->validationMessage());
+            $this->session->setSessionMessage('');
             $this->renderView();
         }
     }

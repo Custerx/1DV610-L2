@@ -9,6 +9,19 @@ class RegisterView {
 	private static $password = 'RegisterView::Password';
 	private static $messageId = 'RegisterView::Message';
 
+	private $registerModel;
+	private $session;
+
+	/**
+	 * Construct function
+	 *
+	 * @param \Model\Session $startSession and \Model\Auth $auth
+	 */
+	public function __construct(\Model\RegisterModel $registerModel, \Model\Session $startSession) {
+		$this->registerModel = $registerModel;
+		$this->session = $startSession;
+	}
+
 	/**
 	 * Create HTTP response
 	 *
@@ -17,7 +30,7 @@ class RegisterView {
 	 * @return  void BUT writes to standard output and cookies!
 	 */
 	public function response() {
-		$message = '';
+		$message = $this->session->getSessionMessage();
 
 		$response = $this->generateRegistrationFormHTML($message);
 
@@ -37,7 +50,7 @@ class RegisterView {
 					<p id="' . self::$messageId . '">' . $message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
-					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . self::$name . '" />
+					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getUserName() . '" />
 
 					<label for="' . self::$password . '">Password :</label>
 					<input type="password" id="' . self::$password . '" name="' . self::$password . '"  />
@@ -50,20 +63,26 @@ class RegisterView {
 			</form>
 		';
 	}
+	/*
 	public function userWantsToRegister() : bool {
 		return (isset($_POST[self::$register]) && $_POST[self::$register] == 'register');
+	} */
+	
+	public function userWantsToRegister() : bool {
+		return (isset($_POST[self::$register]));
     }
     
     public function wantsToRegisterV2() : bool {
         return isset($_GET["register"]);
     }
-
-    public function isParamRegister() : bool {
-        if (isset($_GET["register"])) {
-            return true;
-        }
-        return false;
-    }
+	
+	private function getUserName() {
+		if ($this->hasUserName()) {
+			return strip_tags($_POST[self::$name]);
+		} else {
+			return '';
+		}
+	}
 
 	public function getRegisterCredentials() : array {
 		$inputUserName = '';

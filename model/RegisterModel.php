@@ -13,21 +13,47 @@ class RegisterModel {
 
         $this->inputUserName = $inputUserName;
         $this->inputPassword = $inputPassword;
-        $this->inputPasswordRepeat = $inputPasswordRepeat;
-    }
+		$this->inputPasswordRepeat = $inputPasswordRepeat;
+	}
+	
+	private function validateUserName() : bool {
+		return (strlen($this->inputUserName) < 3);
+	}
+
+	private function validatePassword() : bool {
+		return (strlen($this->inputPassword) < 6);
+	}
+
+	private function validateThatPasswordMatch() : bool {
+		return ($this->inputPassword != $this->inputPasswordRepeat);
+	}
+
+	private function validateUserNameCharacters() : bool {
+		return ($this->inputUserName != strip_tags($this->inputUserName));
+	}
+
+	private function validateUserNameIsExclusive() : bool {
+		return ($this->inputUserName == "Admin");
+	}
 
     /**
 	 * Checks username, password and passwordrepeat input.
 	*/
 	public function registerMessage() {
-		if (empty($this->inputUserName())) {
-			return 'Username is missing';
-		} else if (empty($this->inputPassword())) {
-			return 'Password is missing';
-		} else if (empty($this->inputPasswordRepeat())) {
-			return 'Repeat password is missing';
+		if ($this->validateUserName() && $this->validatePassword()) {
+			return 'Username has too few characters, at least 3 characters. Password has too few characters, at least 6 characters.';
+		} else if ($this->validatePassword()) {
+			return 'Password has too few characters, at least 6 characters.';
+		} else if ($this->validateUserName()) {
+			return 'Username has too few characters, at least 3 characters.';
+		} else if ($this->validateThatPasswordMatch()) {
+			return 'Passwords do not match.';
+		} else if ($this->validateUserNameIsExclusive()) {
+			return 'User exists, pick another username.';
+		} else if ($this->validateUserNameCharacters()) {
+			return 'Username contains invalid characters.';
 		} else {
-				return 'Wrong name or password';
+				return 'Registered new user';
 		}
 	}
 }

@@ -3,6 +3,13 @@
 namespace View;
 
 class LayoutView {
+  private $registerModel;
+  private $session;
+
+	public function __construct(\Model\RegisterModel $registerModel, \Model\Session $session) {
+    $this->registerModel = $registerModel;
+    $this->session = $session;
+	}
   
   public function render($isLoggedIn, LoginView $v, DateTimeView $dtv) {
     echo '<!DOCTYPE html>
@@ -59,8 +66,8 @@ class LayoutView {
   }
 
   private function renderLink() {
-    $registerView = new \View\RegisterView;
-    if ($registerView->isParamRegister()) {
+    $registerView = new \View\RegisterView($this->registerModel, $this->session);
+    if ($registerView->wantsToRegisterV2()) {
         $link = '<a href="?">Back to login</a>';
     } else {
         $link = '<a href="?register">Register a new user</a>';
