@@ -63,10 +63,6 @@ class RegisterView {
 			</form>
 		';
 	}
-	/*
-	public function userWantsToRegister() : bool {
-		return (isset($_POST[self::$register]) && $_POST[self::$register] == 'register');
-	} */
 	
 	public function userWantsToRegister() : bool {
 		return (isset($_POST[self::$register]));

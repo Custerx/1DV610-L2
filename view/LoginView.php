@@ -84,14 +84,6 @@ class LoginView {
 			</form>
 		';
 	}
-	/*
-	public function userWantsToLogin() : bool {
-		return (isset($_POST[self::$login]) && $_POST[self::$login] == 'login');
-	}
-
-	public function userWantsToLogout() : bool {
-		return (isset($_POST[self::$logout]) && $_POST[self::$logout] == 'logout');
-	} */
 
 	public function userWantsToLogin() : bool {
 		return (isset($_POST[self::$login]));

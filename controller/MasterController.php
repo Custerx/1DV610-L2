@@ -2,7 +2,7 @@
 
 namespace Controller;
 
-class LoginController {
+class MasterController {
     private $loginView;
     private $registerView;
     private $registerModel;
@@ -38,9 +38,17 @@ class LoginController {
         if ($this->registerView->userWantsToRegister()) {
             $credentials = $this->registerView->getRegisterCredentials();
             $this->registerModel->registerWithCredentials($credentials);
-            $this->session->setSessionMessage($this->registerModel->registerMessage());
 
-            $this->renderRegisterView();
+            if ($this->successfullRegistration()) {
+                list($registeredUserName, $registeredPassword) = $credentials;
+                $this->authorization->loginWithCredentials(array($registeredUserName, ''));
+                $this->session->setSessionMessage('Registered new user.');
+                header("location:?");
+                $this->renderView();
+            } else {
+                $this->session->setSessionMessage($this->registerModel->registerMessage());
+                $this->renderRegisterView();
+            }
         } else {
             $this->session->setSessionMessage('');
             $this->renderRegisterView();
@@ -51,21 +59,34 @@ class LoginController {
         return $this->layoutView->renderRegister(false, $this->registerView, $this->dateTimeView);
     }
 
+    private function successfullRegistration() {
+        return ($this->registerModel->registerMessage() == "Registered new user");
+    }
+
     private function doLoginManagement() {
         if ($this->loginView->userWantsToLogin()) {
-            $credentials = $this->loginView->getUserCredentials();
-            $this->authorization->loginWithCredentials($credentials);
-            $this->session->setSessionMessage($this->authorization->validationMessage());
+            if ($this->session->isLoggedIn() == true) {
+                $this->session->setSessionMessage('');
+                $this->renderView();
+            } else {
+                $credentials = $this->loginView->getUserCredentials();
+                $this->authorization->loginWithCredentials($credentials);
+                $this->session->setSessionMessage($this->authorization->validationMessage());
 
-            $this->handleCookies();
-            $this->renderView();
+                $this->handleCookies();
+                $this->renderView();
+            }
         } else if ($this->loginView->userWantsToLogout()) {
-            $this->session->setSessionKey("loggedIn", false);
-            $this->session->setSessionMessage('Bye bye!');
+            if ($this->session->isLoggedIn() == false) {
+                $this->session->setSessionMessage('');
+                $this->renderView();
+            } else {
+                $this->session->setSessionKey("loggedIn", false);
+                $this->session->setSessionMessage('Bye bye!');
 
-            // session_unset();
-            $this->session->destroy();
-            $this->renderView();
+                $this->session->destroy();
+                $this->renderView();
+            }
         } else {
             $this->session->setSessionMessage('');
             $this->renderView();
@@ -77,13 +98,11 @@ class LoginController {
     }
 
     private function handleCookies() {
-        if ($this->loginView->userWantsToKeepLogin() && $this->authorization->authentication()) {
+        if ($this->loginView->userWantsToKeepLogin() && $this->session->isLoggedIn()) {
             $cookieValueUserName = $this->session->getSessionKey("sessionUserName");
             $cookieValuePassword = $this->session->getSessionKey("sessionPassword");
             $cookieNameUserName = $this->loginView->getCookieNameUN();
 			$cookieNamePassword = $this->loginView->getCookieNamePWD();
-
-			// $cookieValuePassword = $this->authorization->random_string($cookieValuePassword);
 
             $this->session->addCookie($cookieNameUserName, $cookieValueUserName);
             $this->session->addCookie($cookieNamePassword, $cookieValuePassword);
@@ -91,8 +110,13 @@ class LoginController {
         }
     }
 
-    private function preCookie() : bool {
+    private function hasAllOtherCookie() : bool {
         return ($this->loginView->hasCookie($this->loginView->getCookieNameUN()) && $this->loginView->hasCookie($this->loginView->getCookieNamePWD()));
+    }
+
+    private function hasNoSessionCookie() : bool {
+        echo (!isset($_COOKIE['PHPSESSID']));
+        return (!isset($_COOKIE['PHPSESSID']));
     }
 /*
     public function loginManagement() {
@@ -118,5 +142,16 @@ class LoginController {
         } else {
             $this->doUserManagement();
         }
-    } */
+    }
+            if ($this->hasNoSessionCookie() && $this->hasAllOtherCookie()) {
+            $cookieName = $this->loginView->getCookieNameUN();
+            $cookiePassword = $this->loginView->getCookieNamePWD();
+
+            $credentials = array($this->session->getCookieValue($cookieName), $this->session->getCookieValue($cookiePassword));
+            $this->authorization->loginWithCredentials($credentials);
+            $this->session->setSessionMessage('Welcome back with cookie');
+
+            $this->renderView();
+        }
+    */
 }

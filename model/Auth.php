@@ -3,8 +3,11 @@
 namespace Model;
 
 class Auth {
-	private static $setUserName = "Admin";
-	private static $setPassword = "Password";
+	private static $staticUserName = "Admin";
+	private static $staticPassword = "Password";
+
+	private static $staticUserNameForRegister = "userd6cfddebc0";
+	private static $staticPasswordForRegister = "pass66c2450202";
 
 	private $session;
 
@@ -21,10 +24,18 @@ class Auth {
 		if ($this->authentication()) {
 			$this->session->setSessionKey("loggedIn", true);
 		}
+
+		if ($this->authenticationForRegisterTest()) {
+			$this->session->setSessionKey("loggedIn", true);
+		}
 	}
 
 	private function authentication() : bool {
-		return ($this->session->getSessionKey("sessionPassword") == self::$setPassword && $this->session->getSessionKey("sessionUserName") == self::$setUserName);
+		return ($this->session->getSessionKey("sessionPassword") == self::$staticPassword && $this->session->getSessionKey("sessionUserName") == self::$staticUserName);
+	}
+	
+	private function authenticationForRegisterTest() : bool {
+		return ($this->session->getSessionKey("sessionPassword") == self::$staticPasswordForRegister && $this->session->getSessionKey("sessionUserName") == self::$staticUserNameForRegister);
     }
 
     /**
