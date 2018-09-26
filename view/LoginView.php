@@ -33,15 +33,11 @@ class LoginView {
 	 * @return  void BUT writes to standard output and cookies!
 	 */
 	public function response() {
-		$message = $this->authModel->loadMessage();
-		/*
-		if ($this->userWantsToLogout()) {
-			$message = $this->authModel->logoutMessage();
-		}
-		*/
+		$message = $this->session->getSessionMessage();
+
 		$response = $this->generateLoginFormHTML($message);
 		
-		if ($this->authModel->authentication()) {
+		if ($this->session->isLoggedIn()) {
 			$response = $this->generateLogoutButtonHTML($message);	
 		}
 
@@ -96,12 +92,28 @@ class LoginView {
 		return (isset($_POST[self::$logout]) && $_POST[self::$logout] == 'logout');
 	}
 
+	public function userWantsToKeepLogin() : bool {
+		return (isset($_POST[self::$keep])) != null;
+	}
+
+	public function hasCookie($cookie_Name) {
+		return (isset($_COOKIE[$cookie_Name]));
+	}
+
+	public function getCookieNameUN() {
+		return self::$cookieName;
+	}
+
+	public function getCookieNamePWD() {
+		return self::$cookiePassword;
+	}
+
 	public function resetUserCredentials() {
 		$_POST[self::$name] = '';
 		$_POST[self::$password] = '';
 	}
 
-	public function getUserCredentials() {
+	public function getUserCredentials() : array {
 		$inputUserName = '';
 		$inputPassword = '';
 
@@ -115,13 +127,7 @@ class LoginView {
 
 		return array($inputUserName, $inputPassword);
 	}
-/*
-	private function getUserName() {
-		if ($this->hasUserName()) {
-			return $_POST[self::$name];
-		}
-	}
-*/
+
 	private function hasUserName() : bool {
 		return (isset($_POST[self::$name]) && !empty($_POST[self::$name]));
 	}

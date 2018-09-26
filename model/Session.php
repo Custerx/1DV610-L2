@@ -36,4 +36,32 @@ class Session {
 			return "";
 		}
 	}
+
+	public function setSessionMessage($message) {
+        $_SESSION["message"] = $message;
+	}
+	
+    public function getSessionMessage() {
+        if(isset($_SESSION["message"]) && strlen($_SESSION["message"]) > 0){
+            return $_SESSION["message"];
+        }
+        else {
+            return "";
+        }
+	}
+	
+	public function isLoggedIn() {
+        if(isset($_SESSION["loggedIn"])){
+            return $_SESSION["loggedIn"];
+        }
+        return false;
+    }
+
+	public function addCookie($cookieName, $cookieValue) {
+		setcookie($cookieName, $cookieValue, time() + (86400 * 30), '/');
+	}
+
+	public function getCookieValue($cookieName) {
+		return $_COOKIE[$cookieName];
+	}
 }
