@@ -3,6 +3,7 @@
 namespace View;
 
 class LoginView {
+	private static $loginCSRF;
 	private static $login = 'LoginView::Login';
 	private static $logout = 'LoginView::Logout';
 	private static $name = 'LoginView::UserName';
@@ -79,6 +80,8 @@ class LoginView {
 					<label for="' . self::$keep . '">Keep me logged in  :</label>
 					<input type="checkbox" id="' . self::$keep . '" name="' . self::$keep . '" />
 					
+					<input type="hidden" name="' . self::$loginCSRF . '" value="sdaldjvnoaida895723juigbbvfdasid7378892234jadbaKBD"/>
+
 					<input type="submit" name="' . self::$login . '" value="login" />
 				</fieldset>
 			</form>
@@ -87,6 +90,10 @@ class LoginView {
 
 	public function userWantsToLogin() : bool {
 		return (isset($_POST[self::$login]));
+	}
+
+	public function userWantsToReload() {
+		
 	}
 
 	public function userWantsToLogout() : bool {
@@ -107,6 +114,12 @@ class LoginView {
 
 	public function getCookieNamePWD() {
 		return self::$cookiePassword;
+	}
+
+	public function getLoginCSRF() {
+		if (isset($_POST[self::$loginCSRF])) {
+			return self::$loginCSRF;
+		}
 	}
 
 	public function resetUserCredentials() {

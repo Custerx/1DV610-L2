@@ -23,10 +23,17 @@ class Auth {
 
 		if ($this->authentication()) {
 			$this->session->setSessionKey("loggedIn", true);
+			// session_regenerate_id();
 		}
 
 		if ($this->authenticationForRegisterTest()) {
 			$this->session->setSessionKey("loggedIn", true);
+			// session_regenerate_id();
+		}
+
+		if ($this->authenticationForCookie()) {
+			$this->session->setSessionKey("loggedIn", true);
+			// session_regenerate_id();
 		}
 	}
 
@@ -36,7 +43,11 @@ class Auth {
 	
 	private function authenticationForRegisterTest() : bool {
 		return ($this->session->getSessionKey("sessionPassword") == self::$staticPasswordForRegister && $this->session->getSessionKey("sessionUserName") == self::$staticUserNameForRegister);
-    }
+	}
+	
+	private function authenticationForCookie() : bool {
+		return (password_verify(self::$staticPassword, $this->session->getSessionKey("sessionPassword")) && $this->session->getSessionKey("sessionUserName") == self::$staticUserName);
+	}
 
     /**
 	 * Checks username and password input.

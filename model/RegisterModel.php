@@ -8,6 +8,12 @@ class RegisterModel {
     private $inputUserName;
     private $registerMessage;
 
+	private $session;
+
+	public function __construct($session) {
+		$this->session = $session;
+	}
+
 	public function registerWithCredentials($credentials) {
 		list($inputUserName, $inputPassword, $inputPasswordRepeat) = $credentials;
 
@@ -53,7 +59,7 @@ class RegisterModel {
 		} else if ($this->validateUserNameCharacters()) {
 			return 'Username contains invalid characters.';
 		} else {
-				return 'Registered new user';
+			return 'Registered new user';
 		}
 	}
 }

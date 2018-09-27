@@ -3,6 +3,7 @@
 namespace View;
 
 class RegisterView {
+	private static $registerCSRF;
 	private static $register = 'RegisterView::Register';
 	private static $passwordRepeat = 'RegisterView::PasswordRepeat';
 	private static $name = 'RegisterView::UserName';
@@ -58,10 +59,18 @@ class RegisterView {
 					<label for="' . self::$passwordRepeat . '">Repeat password  :</label>
 					<input type="password" id="' . self::$passwordRepeat . '" name="' . self::$passwordRepeat . '" />
 					
+					<input type="hidden" name="' . self::$registerCSRF .'" value="sdaldjvnoaida895723juigbbvfdasid7378892234jadbaKBD"/>
+
 					<input type="submit" name="' . self::$register . '" value="register" />
 				</fieldset>
 			</form>
 		';
+	}
+
+	public function getRegisterCSRF() {
+		if (isset($_POST[self::$registerCSRF])) {
+			return self::$registerCSRF;
+		}
 	}
 	
 	public function userWantsToRegister() : bool {
