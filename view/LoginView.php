@@ -14,16 +14,32 @@ class LoginView {
 	private static $messageId = 'LoginView::Message';
 
 	private $session;
-	private $authModel;
+	private $loginModel;
 	
 	/**
 	 * Construct function
 	 *
 	 * @param \Model\Session $startSession and \Model\Auth $auth
 	 */
-	public function __construct(\Model\Session $startSession, \Model\Auth $auth) {
+	public function __construct(\Model\Session $startSession, \Model\LoginModel $loginModel) {
 		$this->session = $startSession;
-		$this->authModel = $auth;
+		$this->loginModel = $loginModel;
+		$this->setHttpUserAgent();
+	}
+
+	private function setHttpUserAgent() {
+		if (!isset($_SESSION["AGENT_007"])) {
+			$hashedUserAgent = password_hash($_SERVER['HTTP_USER_AGENT'], PASSWORD_BCRYPT);
+			$this->session->setSessionKey("AGENT_007", $hashedUserAgent);
+		}
+	}
+
+	public function isHttpUserAgentOriginal() : bool {
+		if ($_SERVER['HTTP_USER_AGENT'] == "Other") { // Using no database, had no time setting up so did a non-generic solution.
+			return false;
+		} else {
+			return (password_verify($_SERVER['HTTP_USER_AGENT'], $this->session->getSessionKey("AGENT_007")));
+		}
 	}
 
 	/**

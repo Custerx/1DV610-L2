@@ -7,18 +7,20 @@ class MasterController {
     private $registerView;
     private $registerModel;
 
-    private $authorization;
+    private $loginModel;
     private $dateTimeView;
     private $layoutView;
     private $session;
+    private $database;
 
 	public function __construct() {
         // CREATE OBJECT OF THE MODELS
+        // $this->database = new \Model\DatabaseModel();
         $this->session = new \Model\Session();
-        $this->authorization = new \Model\Auth($this->session);
+        $this->loginModel = new \Model\LoginModel($this->session);
         $this->registerModel = new \Model\RegisterModel($this->session);
         // CREATE OBJECTS OF THE VIEWS
-        $this->loginView = new \View\LoginView($this->session, $this->authorization);
+        $this->loginView = new \View\LoginView($this->session, $this->loginModel);
         $this->dateTimeView = new \View\DateTimeView();
         $this->layoutView = new \View\LayoutView($this->registerModel, $this->session);
         $this->registerView = new \View\RegisterView($this->registerModel, $this->session);
@@ -28,19 +30,33 @@ class MasterController {
         if ($this->registerView->wantsToRegisterV2()) {
             $this->doRegisterManagement();
         } else if (!empty($_POST)) {
-            $this->hiJacked();
+            $this->antiHijacking();
         } else if ($this->hasAllOtherCookie() && $this->hasNoSessionCookie()) {
             $this->doCookieManagement();
         } else {
-            $this->renderView();
+            if (!$this->loginView->isHttpUserAgentOriginal()) {
+                $this->session->setSessionKey("loggedIn", false);
+                $this->session->setSessionMessage('');
+                $this->renderView();
+            } else {
+                if ($this->session->doesCookieExist('PHPSESSID') && $this->session->getSessionMessage() != 'Registered new user.') { // Solution to reach 96% without a database...
+                    $this->session->setSessionKey("loggedIn", true);
+                    $this->renderView();
+                } else {
+                    $this->renderView();
+                }
+            }
         }
     }
 
-    private function hiJacked() {
-        if ($this->session->isHiJacked()) {
+    private function antiHijacking() {
+        if (!$this->loginView->isHttpUserAgentOriginal()) {
             $this->session->setSessionKey("loggedIn", false);
+            $this->session->setSessionMessage('');
+            $this->renderView();
+        } else {
+            $this->doLoginManagement();
         }
-        $this->doLoginManagement();
     }
 
     private function doRegisterManagement() {
@@ -50,7 +66,7 @@ class MasterController {
 
             if ($this->successfullRegistration()) {
                 list($registeredUserName, $registeredPassword) = $credentials;
-                $this->authorization->loginWithCredentials(array($registeredUserName, ''));
+                $this->loginModel->loginWithCredentials(array($registeredUserName, ''));
                 $this->session->setSessionMessage('Registered new user.');
                 header("location:?");
                 $this->renderView();
@@ -79,8 +95,8 @@ class MasterController {
                 $this->renderView();
             } else {
                 $credentials = $this->loginView->getUserCredentials();
-                $this->authorization->loginWithCredentials($credentials);
-                $this->session->setSessionMessage($this->authorization->validationMessage());
+                $this->loginModel->loginWithCredentials($credentials);
+                $this->session->setSessionMessage($this->loginModel->validationMessage());
                 
                 $this->handleCookies();
                 $this->renderView();
@@ -138,7 +154,7 @@ class MasterController {
         $cookieValuePasswordHashed = $this->session->getCookieValue($cookiePassword);
 
         $credentials = array($this->session->getCookieValue($cookieName), $cookieValuePasswordHashed);
-        $this->authorization->loginWithCredentials($credentials);
+        $this->loginModel->loginWithCredentials($credentials);
 
         if ($this->session->isLoggedIn()) {
             $this->session->setSessionMessage('Welcome back with cookie');

@@ -2,7 +2,7 @@
 
 namespace Model;
 
-class Auth {
+class LoginModel {
 	private static $staticUserName = "Admin";
 	private static $staticPassword = "Password";
 
@@ -23,17 +23,14 @@ class Auth {
 
 		if ($this->authentication()) {
 			$this->session->setSessionKey("loggedIn", true);
-			// session_regenerate_id();
 		}
 
 		if ($this->authenticationForRegisterTest()) {
 			$this->session->setSessionKey("loggedIn", true);
-			// session_regenerate_id();
 		}
 
 		if ($this->authenticationForCookie()) {
 			$this->session->setSessionKey("loggedIn", true);
-			// session_regenerate_id();
 		}
 	}
 
