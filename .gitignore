@@ -1,0 +1,9 @@
+.vagrant
+**/node_modules
+**/*/node_modules
+.idea
+**/obj
+**/bin
+.vs
+.vscode
+.database.json

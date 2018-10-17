@@ -15,10 +15,13 @@ class MasterController {
 
 	public function __construct() {
         // CREATE OBJECT OF THE MODELS
-        // $this->database = new \Model\DatabaseModel();
+        $this->database = new \Model\DatabaseModel();
         $this->session = new \Model\Session();
         $this->loginModel = new \Model\LoginModel($this->session);
         $this->registerModel = new \Model\RegisterModel($this->session);
+        $this->database->saveMemberToJSONFile(new \Model\Member("Arne", "testtest"));
+        $this->database->checkCredentials("Arne", "testtest");
+
         // CREATE OBJECTS OF THE VIEWS
         $this->loginView = new \View\LoginView($this->session, $this->loginModel);
         $this->dateTimeView = new \View\DateTimeView();
