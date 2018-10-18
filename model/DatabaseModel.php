@@ -3,6 +3,8 @@
 namespace Model;
 
 class DatabaseModel {
+    private static $SALT_STRING = "sagfsd987234009987fashdnakhd0834809471283jhdfoiahfd74q02u";
+
     private $file;
     private $createTestMember;
     private $session;
@@ -71,12 +73,16 @@ class DatabaseModel {
         }
     }
 
+    public function encryptWithCrypt($a_toBeEncrypted) {
+        return crypt($a_toBeEncrypted, self::$SALT_STRING);
+    }
+
     private function findMemberByUsername(string $a_username) {
         $members_ = $this->loadJSONFile();
 
         $findMemberByUsername = function($a_findUsername) use ($members_) {
             foreach ($members_ as $member) {
-                if (password_verify($a_findUsername, $member->username)) {
+                if (hash_equals($member->username, $a_findUsername)) {
                     return $member;
                 }
             }
@@ -92,7 +98,7 @@ class DatabaseModel {
 
         $findUsername = function($a_findUsername) use ($members_) {
             foreach ($members_ as $member) {
-                if (password_verify($a_findUsername, $member->username)) {
+                if (hash_equals($member->username, $a_findUsername)) {
                     return false;
                 }
             }
@@ -141,11 +147,11 @@ class DatabaseModel {
     }
 
     private function noHiJackingAttempt($a_HTTP_USER_AGENT, $member) : bool {
-        return password_verify($a_HTTP_USER_AGENT, $member->HTTP_USER_AGENT);
+        return hash_equals($member->HTTP_USER_AGENT, $a_HTTP_USER_AGENT);
     }
 
     private function correctPassword($a_password, $member) : bool {
-        return password_verify($a_password, $member->password);
+        return hash_equals($member->password, $a_password);
     }
 
     private function ifFileDoNotExist() : bool {

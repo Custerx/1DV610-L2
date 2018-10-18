@@ -106,10 +106,11 @@ class LoginView {
 		if ($this->postEmptyPassword()) {
 			throw new \Exception("Password is missing");
 		}
+		// Encrypt information so it can be compared with database information using hash_equals.
+		$inputUserName = $this->database->encryptWithCrypt($_POST[self::$name]);
+		$inputPassword = $this->database->encryptWithCrypt($_POST[self::$password]);
+		$users_HTTP_USER_AGENT = $this->database->encryptWithCrypt($_SERVER['HTTP_USER_AGENT']);
 
-		$inputUserName = $_POST[self::$name];
-		$inputPassword = $_POST[self::$password];
-		$users_HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
 		$this->database->checkCredentials($inputUserName, $inputPassword, $users_HTTP_USER_AGENT);
 	}
 
@@ -129,6 +130,43 @@ class LoginView {
 		$this->setLogoutMessage();
 	}
 
+	public function loginUserWithCookie() {
+		try {
+			$this->tryToLoginUserWithCookie();
+			$this->cookieFeedbackToUser();
+		} catch (\Exception $e) {
+            $this->messageFromException = $e->getMessage();
+        }
+	}
+	// Placed here due to high abstraction level and strong connection to loginUserWithCookie.
+	private function tryToLoginUserWithCookie() {
+        $cookieName = $this->getCookieNameForUsername();
+        $cookiePassword = $this->getCookieNameForPassword();
+		$cookieValuePasswordHashed = $this->getCookieValue($cookiePassword);
+		$cookieValueUsernameHashed = $this->getCookieValue($cookieName);
+		$users_HTTP_USER_AGENTHashed = $this->database->encryptWithCrypt($_SERVER['HTTP_USER_AGENT']);
+
+		$this->database->checkCredentials($cookieValueUsernameHashed, $cookieValuePasswordHashed, $users_HTTP_USER_AGENTHashed);
+	}
+	
+	public function sendCookieToUser() {
+        $cookieValueUserName = $this->database->encryptWithCrypt($_POST[self::$name]);
+        $cookieValuePasswordHashed = $this->database->encryptWithCrypt($_POST[self::$password]);
+        $cookieNameUserName = $this->getCookieNameForUsername();
+		$cookieNamePassword = $this->getCookieNameForPassword();
+
+        $this->addCookie($cookieNameUserName, $cookieValueUserName);
+        $this->addCookie($cookieNamePassword, $cookieValuePasswordHashed);
+	}
+
+	public function authorizedUserWantsToStayLoggedIn() : bool {
+        return ($this->userWantsToKeepLogin() && $this->session->isLoggedIn());
+	}
+	
+	public function hasCookiesForUsernameAndPassword() : bool {
+        return ($this->hasCookie($this->getCookieNameForUsername()) && $this->hasCookie($this->getCookieNameForPassword()));
+    }
+
 	public function showRegisteredUserTheLoginPage() : bool {
         return isset($_GET["login"]);
 	}
@@ -141,22 +179,6 @@ class LoginView {
 		return (isset($_POST[self::$logout]));
 	}
 
-	public function userWantsToKeepLogin() : bool {
-		return (isset($_POST[self::$keep])) != null;
-	}
-
-	public function hasCookie($cookie_Name) {
-		return (isset($_COOKIE[$cookie_Name]));
-	}
-
-	public function getCookieNameUN() {
-		return self::$cookieName;
-	}
-
-	public function getCookieNamePWD() {
-		return self::$cookiePassword;
-	}
-
 	public function successfullRegisterView() {
 		$this->setRegisterMessage();
 		$_POST[self::$name] = $this->session->getRegisteredUsername();
@@ -164,6 +186,35 @@ class LoginView {
 
 	public function resetMessage() {
 		$this->messageFromException = "";
+	}
+
+	public function hasNoSessionCookie() : bool {
+        return (!isset($_COOKIE['PHPSESSID']));
+	}
+
+	public function setCookieMessage() {
+		$this->messageFromException = "Welcome and you will be remembered";
+	}
+
+	public function doesCookieExist($cookieName) : bool {
+		return isset($_COOKIE[$cookieName]);
+	}
+
+	private function cookieFeedbackToUser() {
+        if ($this->session->isLoggedIn()) {
+            $this->setAuthCookieMessage();
+        } else {
+			$this->removeNotAuthorizedCookies();
+			$this->setFailedAuthCookieMessage();
+        }
+	}
+
+	private function removeNotAuthorizedCookies() {
+		$cookieNameUserName = $this->getCookieNameForUsername();
+		$cookieNamePassword = $this->getCookieNameForPassword();
+
+		$this->deleteCookie($cookieNameUserName);
+		$this->deleteCookie($cookieNamePassword);
 	}
 
 	private function getUserName() {
@@ -186,6 +237,36 @@ class LoginView {
 		}
 	}
 
+	private function userWantsToKeepLogin() : bool {
+		return (isset($_POST[self::$keep])) != null;
+	}
+
+	private function hasCookie($cookie_Name) {
+		return (isset($_COOKIE[$cookie_Name]));
+	}
+
+	private function getCookieNameForUsername() {
+		return self::$cookieName;
+	}
+
+	private function getCookieNameForPassword() {
+		return self::$cookiePassword;
+	}
+
+	private function addCookie($cookieName, $cookieValue) {
+		setcookie($cookieName, $cookieValue, time() + (86400 * 30), '/');
+	}
+
+	private function deleteCookie($cookieName) {
+        setcookie($cookieName, '', time() - 3600);
+	}
+
+	private function getCookieValue($cookieName) {
+		if(isset($_COOKIE[$cookieName])){
+			return $_COOKIE[$cookieName];
+		}
+	}
+
 	private function setLoginMessage() {
 		$this->messageFromException = "Welcome";
 	}
@@ -196,5 +277,13 @@ class LoginView {
 
 	private function setRegisterMessage() {
 		$this->messageFromException = "Registered new user.";
+	}
+
+	private function setFailedAuthCookieMessage() {
+		$this->messageFromException = "Wrong information in cookies";
+	}
+
+	private function setAuthCookieMessage() {
+		$this->messageFromException = "Welcome back with cookie";
 	}
 }

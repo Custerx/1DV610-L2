@@ -75,23 +75,7 @@ class RegisterView {
 			$this->messageFromException = $e->getMessage();
 		}
 	}
-
-	public function userWantsToViewRegisterPage() : bool {
-        return isset($_GET["register"]);
-	}
-
-	public function makeUsernameAvailableForLoginPage() {
-		$this->session->setRegisteredUsername($_POST[self::$name]);
-	}
-
-	public function redirectToLoginPage() {
-		header("location:?login");
-	}
-
-	private function userWantsToRegister() : bool {
-		return (isset($_POST[self::$register]));
-    }
-	
+	// Placed here due to high abstraction level and strong connection to userSuccessfullyRegistered.
 	private function tryToregisterUser() {
 		if ($this->hasUserName() && $this->hasPassword() && $this->hasPasswordRepeat()) {
 			$inputUserName = $_POST[self::$name];
@@ -109,6 +93,22 @@ class RegisterView {
 			throw new \Exception("One ore more fields are empty");
 		}
 	}
+
+	public function userWantsToViewRegisterPage() : bool {
+        return isset($_GET["register"]);
+	}
+
+	public function makeUsernameAvailableForLoginPage() {
+		$this->session->setRegisteredUsername($_POST[self::$name]);
+	}
+
+	public function redirectToLoginPage() {
+		header("location:?login");
+	}
+
+	private function userWantsToRegister() : bool {
+		return (isset($_POST[self::$register]));
+    }
 
 	private function getUserName() {
 		if ($this->hasUserName()) {

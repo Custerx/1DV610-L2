@@ -2,7 +2,7 @@
 
 namespace Model;
 
-class Session {
+class Session {	
 	public function __construct() {
 		if (session_status() == PHP_SESSION_NONE) {
 			ini_set('session.cookie_httponly', true); // Disallow access to session cookie by Javascript.
@@ -10,6 +10,21 @@ class Session {
 			ini_set('session.use_only_cookies', true); // Prevents session module to use session ID values set by GET/POST/URL when session ID cookie is not initialized. 
 			session_start();
 		}
+	}
+
+	public function isLoggedIn() {
+        if(isset($_SESSION["loggedIn"])){
+            return $_SESSION["loggedIn"];
+        }
+        return false;
+	}
+	
+	public function userLogsOut() {
+		$this->setSessionKey("loggedIn", false);
+	}
+
+	public function userLogsIn() {
+		$this->setSessionKey("loggedIn", true);
 	}
 
 	public function destroy() {
@@ -52,37 +67,4 @@ class Session {
             return "";
         }
 	}
-	
-	public function isLoggedIn() {
-        if(isset($_SESSION["loggedIn"])){
-            return $_SESSION["loggedIn"];
-        }
-        return false;
-	}
-	
-	public function userLogsOut() {
-		$this->setSessionKey("loggedIn", false);
-	}
-
-	public function userLogsIn() {
-		$this->setSessionKey("loggedIn", true);
-	}
-
-	public function addCookie($cookieName, $cookieValue) {
-		setcookie($cookieName, $cookieValue, time() + (86400 * 30), '/');
-	}
-
-	public function getCookieValue($cookieName) {
-		if(isset($_COOKIE[$cookieName])){
-			return $_COOKIE[$cookieName];
-		}
-	}
-
-	public function doesCookieExist($cookieName) : bool {
-		return isset($_COOKIE[$cookieName]);
-	}
-
-	public function deleteCookie($cookieName) {
-        setcookie($cookieName, '', time() - 3600);
-    }
 }
