@@ -4,9 +4,11 @@ namespace Test;
 
 class CreateTestMember {
     private static $passWord = "Password";
+    private static $HTTP_USER_AGENT = "fakeUserAgent";
+    private static $cookie = "fakeCookie";
 
     public function randomMember() {
-        return new \Model\Member($this->randomUsername(), self::$passWord);
+        return new \Model\Member($this->randomUsername(), self::$passWord, self::$passWord, self::$HTTP_USER_AGENT, self::$cookie);
     }
 
     private function randomUsername() : string {

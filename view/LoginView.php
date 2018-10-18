@@ -14,32 +14,17 @@ class LoginView {
 	private static $messageId = 'LoginView::Message';
 
 	private $session;
-	private $loginModel;
+	private $database;
+	private $messageFromException = '';
 	
 	/**
 	 * Construct function
 	 *
 	 * @param \Model\Session $startSession and \Model\Auth $auth
 	 */
-	public function __construct(\Model\Session $startSession, \Model\LoginModel $loginModel) {
+	public function __construct(\Model\Session $startSession, \Model\DatabaseModel $a_database) {
 		$this->session = $startSession;
-		$this->loginModel = $loginModel;
-		$this->setHttpUserAgent();
-	}
-
-	private function setHttpUserAgent() {
-		if (!isset($_SESSION["AGENT_007"])) {
-			$hashedUserAgent = password_hash($_SERVER['HTTP_USER_AGENT'], PASSWORD_BCRYPT);
-			$this->session->setSessionKey("AGENT_007", $hashedUserAgent);
-		}
-	}
-
-	public function isHttpUserAgentOriginal() : bool {
-		if ($_SERVER['HTTP_USER_AGENT'] == "Other") { // Using no database, had no time setting up so did a non-generic solution.
-			return false;
-		} else {
-			return (password_verify($_SERVER['HTTP_USER_AGENT'], $this->session->getSessionKey("AGENT_007")));
-		}
+		$this->database = $a_database;
 	}
 
 	/**
@@ -50,7 +35,7 @@ class LoginView {
 	 * @return  void BUT writes to standard output and cookies!
 	 */
 	public function response() {
-		$message = $this->session->getSessionMessage();
+		$message = $this->messageFromException;
 
 		$response = $this->generateLoginFormHTML($message);
 		
@@ -88,15 +73,13 @@ class LoginView {
 					<p id="' . self::$messageId . '">' . $message . '</p>
 					
 					<label for="' . self::$name . '">Username :</label>
-					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->session->getSessionKey("sessionUserName") . '" />
+					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getUserName() . '" />
 
 					<label for="' . self::$password . '">Password :</label>
 					<input type="password" id="' . self::$password . '" name="' . self::$password . '"  />
 
 					<label for="' . self::$keep . '">Keep me logged in  :</label>
 					<input type="checkbox" id="' . self::$keep . '" name="' . self::$keep . '" />
-					
-					<input type="hidden" name="' . self::$loginCSRF . '" value="sdaldjvnoaida895723juigbbvfdasid7378892234jadbaKBD"/>
 
 					<input type="submit" name="' . self::$login . '" value="login" />
 				</fieldset>
@@ -104,12 +87,54 @@ class LoginView {
 		';
 	}
 
-	public function userWantsToLogin() : bool {
-		return (isset($_POST[self::$login]));
+	public function loginUser() {
+		try {
+			if($this->userWantsToLogin()) {
+				$this->tryToLoginUser();
+				$this->setLoginMessage();
+			}
+		} catch (\Exception $e) {
+            $this->messageFromException = $e->getMessage();
+        }
+	}
+	// Placed here due to high abstraction level and strong connection to loginUser.
+	private function tryToLoginUser() {
+		if ($this->postEmptyUserName()) {
+			throw new \Exception("Username is missing");	
+		}
+
+		if ($this->postEmptyPassword()) {
+			throw new \Exception("Password is missing");
+		}
+
+		$inputUserName = $_POST[self::$name];
+		$inputPassword = $_POST[self::$password];
+		$users_HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
+		$this->database->checkCredentials($inputUserName, $inputPassword, $users_HTTP_USER_AGENT);
 	}
 
-	public function userWantsToReload() {
-		
+	public function logoutUser() {
+		try {
+			if($this->userWantsToLogout()) {
+				$this->tryToLogoutUser();
+			}
+		} catch (\Exception $e) {
+            $this->messageFromException = $e->getMessage();
+        }	
+	}
+	// Placed here due to strong connection to logoutUser.
+	private function tryToLogoutUser() {
+		$this->session->userLogsOut();
+		$this->session->destroy();
+		$this->setLogoutMessage();
+	}
+
+	public function showRegisteredUserTheLoginPage() : bool {
+        return isset($_GET["login"]);
+	}
+
+	public function userWantsToLogin() : bool {
+		return (isset($_POST[self::$login]));
 	}
 
 	public function userWantsToLogout() : bool {
@@ -132,37 +157,44 @@ class LoginView {
 		return self::$cookiePassword;
 	}
 
-	public function getLoginCSRF() {
-		if (isset($_POST[self::$loginCSRF])) {
-			return self::$loginCSRF;
+	public function successfullRegisterView() {
+		$this->setRegisterMessage();
+		$_POST[self::$name] = $this->session->getRegisteredUsername();
+	}
+
+	public function resetMessage() {
+		$this->messageFromException = "";
+	}
+
+	private function getUserName() {
+		if (isset($_POST[self::$name]) && !empty($_POST[self::$name])) {
+			return $_POST[self::$name];
 		}
 	}
 
-	public function resetUserCredentials() {
-		$_POST[self::$name] = '';
-		$_POST[self::$password] = '';
+	private function postEmptyUserName() : bool {
+		return (isset($_POST[self::$name]) && empty($_POST[self::$name]));
 	}
 
-	public function getUserCredentials() : array {
-		$inputUserName = '';
-		$inputPassword = '';
+	private function postEmptyPassword() : bool {
+		return (isset($_POST[self::$password]) && empty($_POST[self::$password]));
+	}
 
-		if ($this->hasUserName()) {
-			$inputUserName = $_POST[self::$name];	
+	private function get_PHPSESSID_Cookie_Value() {
+		if(isset($_COOKIE["PHPSESSID"])){
+			return $_COOKIE["PHPSESSID"];
 		}
-
-		if ($this->hasPassword()) {
-			$inputPassword = $_POST[self::$password];
-		}
-
-		return array($inputUserName, $inputPassword);
 	}
 
-	private function hasUserName() : bool {
-		return (isset($_POST[self::$name]) && !empty($_POST[self::$name]));
+	private function setLoginMessage() {
+		$this->messageFromException = "Welcome";
 	}
 
-	private function hasPassword() : bool {
-		return (isset($_POST[self::$password]) && !empty($_POST[self::$password]));
+	private function setLogoutMessage() {
+		$this->messageFromException = "Bye bye!";
+	}
+
+	private function setRegisterMessage() {
+		$this->messageFromException = "Registered new user.";
 	}
 }

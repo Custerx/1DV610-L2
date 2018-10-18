@@ -2,15 +2,7 @@
 
 namespace View;
 
-class LayoutView {
-  private $registerModel;
-  private $session;
-
-	public function __construct(\Model\RegisterModel $registerModel, \Model\Session $session) {
-    $this->registerModel = $registerModel;
-    $this->session = $session;
-	}
-  
+class LayoutView { 
   public function render($isLoggedIn, LoginView $v, DateTimeView $dtv) {
     echo '<!DOCTYPE html>
       <html>
@@ -20,7 +12,7 @@ class LayoutView {
         </head>
         <body>
           <h1>Assignment 2</h1>
-          ' . $this->renderIsLoggedIn($isLoggedIn) . '
+          ' . $this->renderIsLoggedInForLogin($isLoggedIn) . '
           
           <div class="container">
               ' . $v->response() . '
@@ -41,7 +33,7 @@ class LayoutView {
         </head>
         <body>
           <h1>Assignment 2</h1>
-          ' . $this->renderIsLoggedIn($isLoggedIn) . '
+          ' . $this->renderIsLoggedInForRegister($isLoggedIn) . '
           
           <div class="container">
               ' . $v->response() . '
@@ -53,25 +45,27 @@ class LayoutView {
     ';
   }
   
-  private function renderIsLoggedIn($isLoggedIn) {
+  private function renderIsLoggedInForLogin($isLoggedIn) {
     if ($isLoggedIn) {
       return '<h2>Logged in</h2>';
     }
     else {
       return '
-      ' . $this->renderLink() . '
+      <a href="?register">Register a new user</a>
       <h2>Not logged in</h2>
       ';
     }
   }
 
-  private function renderLink() {
-    $registerView = new \View\RegisterView($this->registerModel, $this->session);
-    if ($registerView->wantsToRegisterV2()) {
-        $link = '<a href="?">Back to login</a>';
-    } else {
-        $link = '<a href="?register">Register a new user</a>';
+  private function renderIsLoggedInForRegister($isLoggedIn) {
+    if ($isLoggedIn) {
+      return '<h2>Logged in</h2>';
     }
-    return $link;
+    else {
+      return '
+      <a href="?">Back to login</a>
+      <h2>Not logged in</h2>
+      ';
+    }
   }
 }

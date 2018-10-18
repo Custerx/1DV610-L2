@@ -15,70 +15,37 @@ class MasterController {
 
 	public function __construct() {
         // CREATE OBJECT OF THE MODELS
-        $this->database = new \Model\DatabaseModel();
         $this->session = new \Model\Session();
         $this->loginModel = new \Model\LoginModel($this->session);
-        $this->registerModel = new \Model\RegisterModel($this->session);
-        $this->database->saveMemberToJSONFile(new \Model\Member("Arne", "testtest"));
-        $this->database->checkCredentials("Arne", "testtest");
+        $this->database = new \Model\DatabaseModel($this->session);
 
         // CREATE OBJECTS OF THE VIEWS
-        $this->loginView = new \View\LoginView($this->session, $this->loginModel);
+        $this->loginView = new \View\LoginView($this->session, $this->database);
         $this->dateTimeView = new \View\DateTimeView();
-        $this->layoutView = new \View\LayoutView($this->registerModel, $this->session);
-        $this->registerView = new \View\RegisterView($this->registerModel, $this->session);
+        $this->layoutView = new \View\LayoutView();
+        $this->registerView = new \View\RegisterView($this->session, $this->database);
     }
 
     public function routerHandler() {
-        if ($this->registerView->wantsToRegisterV2()) {
+        if ($this->registerView->userWantsToViewRegisterPage()) {
             $this->doRegisterManagement();
         } else if (!empty($_POST)) {
-            $this->antiHijacking();
+            $this->doLoginManagement();
+        } else if ($this->loginView->showRegisteredUserTheLoginPage()) { 
+            $this->loginView->successfullRegisterView();
+            $this->renderView();
         } else if ($this->hasAllOtherCookie() && $this->hasNoSessionCookie()) {
             $this->doCookieManagement();
         } else {
-            if (!$this->loginView->isHttpUserAgentOriginal()) {
-                $this->session->setSessionKey("loggedIn", false);
-                $this->session->setSessionMessage('');
-                $this->renderView();
-            } else {
-                if ($this->session->doesCookieExist('PHPSESSID') && $this->session->getSessionMessage() != 'Registered new user.') { // Solution to reach 96% without a database...
-                    $this->session->setSessionKey("loggedIn", true);
-                    $this->renderView();
-                } else {
-                    $this->renderView();
-                }
-            }
-        }
-    }
-
-    private function antiHijacking() {
-        if (!$this->loginView->isHttpUserAgentOriginal()) {
-            $this->session->setSessionKey("loggedIn", false);
-            $this->session->setSessionMessage('');
             $this->renderView();
-        } else {
-            $this->doLoginManagement();
         }
     }
 
     private function doRegisterManagement() {
-        if ($this->registerView->userWantsToRegister()) {
-            $credentials = $this->registerView->getRegisterCredentials();
-            $this->registerModel->registerWithCredentials($credentials);
-
-            if ($this->successfullRegistration()) {
-                list($registeredUserName, $registeredPassword) = $credentials;
-                $this->loginModel->loginWithCredentials(array($registeredUserName, ''));
-                $this->session->setSessionMessage('Registered new user.');
-                header("location:?");
-                $this->renderView();
-            } else {
-                $this->session->setSessionMessage($this->registerModel->registerMessage());
-                $this->renderRegisterView();
-            }
+        if ($this->registerView->userSuccessfullyRegistered()) {
+            $this->registerView->makeUsernameAvailableForLoginPage();
+            $this->registerView->redirectToLoginPage();
         } else {
-            $this->session->setSessionMessage('');
             $this->renderRegisterView();
         }
     }
@@ -87,43 +54,57 @@ class MasterController {
         return $this->layoutView->renderRegister(false, $this->registerView, $this->dateTimeView);
     }
 
-    private function successfullRegistration() {
-        return ($this->registerModel->registerMessage() == "Registered new user");
-    }
-
     private function doLoginManagement() {
         if ($this->loginView->userWantsToLogin()) {
-            if ($this->session->isLoggedIn()) {
-                $this->session->setSessionMessage('');
-                $this->renderView();
-            } else {
-                $credentials = $this->loginView->getUserCredentials();
-                $this->loginModel->loginWithCredentials($credentials);
-                $this->session->setSessionMessage($this->loginModel->validationMessage());
-                
-                $this->handleCookies();
-                $this->renderView();
-                $this->session->unsetSessionMessage();
-            }
+            $this->login();
         } else if ($this->loginView->userWantsToLogout()) {
-            if ($this->session->isLoggedIn() == false) {
-                $this->session->setSessionMessage('');
-                $this->renderView();
-            } else {
-                $this->session->setSessionKey("loggedIn", false);
-                $this->session->setSessionMessage('Bye bye!');
-
-                $this->session->destroy();
-                $this->renderView();
-            }
+            $this->logout();
         } else {
-            $this->session->setSessionMessage('');
+            $this->loginView->resetMessage();
+            $this->renderView();
+        }
+    }
+
+    private function login() {
+        if ($this->session->isLoggedIn()) {
+            $this->loginView->resetMessage();
+            $this->renderView();
+        } else {
+            $this->loginView->loginUser();
+            $this->renderView();
+        }
+    }
+
+    private function logout() {
+        if ($this->session->isLoggedIn() == false) {
+            $this->loginView->resetMessage();
+            $this->renderView();
+        } else {
+            $this->loginView->logoutUser();
             $this->renderView();
         }
     }
 
     private function renderView() {
         return $this->layoutView->render($this->session->isLoggedIn(), $this->loginView, $this->dateTimeView);
+    }
+
+    private function doCookieManagement() {
+        echo "kaka";
+        $cookieName = $this->loginView->getCookieNameUN();
+        $cookiePassword = $this->loginView->getCookieNamePWD();
+        $cookieValuePasswordHashed = $this->session->getCookieValue($cookiePassword);
+
+        $credentials = array($this->session->getCookieValue($cookieName), $cookieValuePasswordHashed);
+        $this->loginModel->loginWithCredentials($credentials);
+
+        if ($this->session->isLoggedIn()) {
+            $this->session->setSessionMessage('Welcome back with cookie');
+        } else {
+            $this->session->setSessionMessage('Wrong information in cookies');
+        }
+
+        $this->renderView();
     }
 
     private function handleCookies() {
@@ -149,32 +130,5 @@ class MasterController {
 
     private function hasNoSessionCookie() : bool {
         return (!isset($_COOKIE['PHPSESSID']));
-    }
-
-    private function doCookieManagement() {
-        $cookieName = $this->loginView->getCookieNameUN();
-        $cookiePassword = $this->loginView->getCookieNamePWD();
-        $cookieValuePasswordHashed = $this->session->getCookieValue($cookiePassword);
-
-        $credentials = array($this->session->getCookieValue($cookieName), $cookieValuePasswordHashed);
-        $this->loginModel->loginWithCredentials($credentials);
-
-        if ($this->session->isLoggedIn()) {
-            $this->session->setSessionMessage('Welcome back with cookie');
-        } else {
-            $this->session->setSessionMessage('Wrong information in cookies');
-        }
-
-        $this->renderView();
-    }
-
-    private function isHijackingRegister() : bool {
-        $rCSRF = $this->registerView->getRegisterCSRF();
-        return $this->session->isHijacked($rCSRF);
-    }
-
-    private function isHijackingLogin() : bool {
-        $lCSRF = $this->registerView->getLoginCSRF();
-        return $this->session->isHijacked($lCSRF);
     }
 }

@@ -15,8 +15,8 @@ class LoginModel {
 		$this->session = $session;
 	}
 
-	public function loginWithCredentials($credentials) {
-		list($inputUserName, $inputPassword) = $credentials;
+	public function loginWithCredentials() {
+
 
 		$this->session->setSessionKey("sessionUserName", $inputUserName);
 		$this->session->setSessionKey("sessionPassword", $inputPassword);

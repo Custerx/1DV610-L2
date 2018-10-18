@@ -3,24 +3,24 @@
 namespace View;
 
 class RegisterView {
-	private static $registerCSRF;
 	private static $register = 'RegisterView::Register';
 	private static $passwordRepeat = 'RegisterView::PasswordRepeat';
 	private static $name = 'RegisterView::UserName';
 	private static $password = 'RegisterView::Password';
 	private static $messageId = 'RegisterView::Message';
 
-	private $registerModel;
 	private $session;
+	private $database;
+	private $messageFromException = '';
 
 	/**
 	 * Construct function
 	 *
 	 * @param \Model\Session $startSession and \Model\Auth $auth
 	 */
-	public function __construct(\Model\RegisterModel $registerModel, \Model\Session $startSession) {
-		$this->registerModel = $registerModel;
+	public function __construct(\Model\Session $startSession, \Model\DatabaseModel $a_database) {
 		$this->session = $startSession;
+		$this->database = $a_database;
 	}
 
 	/**
@@ -31,7 +31,7 @@ class RegisterView {
 	 * @return  void BUT writes to standard output and cookies!
 	 */
 	public function response() {
-		$message = $this->session->getSessionMessage();
+		$message = $this->messageFromException; // TODO : Add solution to handle messages.
 
 		$response = $this->generateRegistrationFormHTML($message);
 
@@ -58,8 +58,6 @@ class RegisterView {
 
 					<label for="' . self::$passwordRepeat . '">Repeat password  :</label>
 					<input type="password" id="' . self::$passwordRepeat . '" name="' . self::$passwordRepeat . '" />
-					
-					<input type="hidden" name="' . self::$registerCSRF .'" value="sdaldjvnoaida895723juigbbvfdasid7378892234jadbaKBD"/>
 
 					<input type="submit" name="' . self::$register . '" value="register" />
 				</fieldset>
@@ -67,46 +65,57 @@ class RegisterView {
 		';
 	}
 
-	public function getRegisterCSRF() {
-		if (isset($_POST[self::$registerCSRF])) {
-			return self::$registerCSRF;
+	public function userSuccessfullyRegistered() {
+		try {
+			if($this->userWantsToRegister()) {
+				$this->tryToregisterUser();
+				return true;
+			}
+		} catch (\Exception $e) {
+			$this->messageFromException = $e->getMessage();
 		}
 	}
-	
-	public function userWantsToRegister() : bool {
+
+	public function userWantsToViewRegisterPage() : bool {
+        return isset($_GET["register"]);
+	}
+
+	public function makeUsernameAvailableForLoginPage() {
+		$this->session->setRegisteredUsername($_POST[self::$name]);
+	}
+
+	public function redirectToLoginPage() {
+		header("location:?login");
+	}
+
+	private function userWantsToRegister() : bool {
 		return (isset($_POST[self::$register]));
     }
-    
-    public function wantsToRegisterV2() : bool {
-        return isset($_GET["register"]);
-    }
 	
+	private function tryToregisterUser() {
+		if ($this->hasUserName() && $this->hasPassword() && $this->hasPasswordRepeat()) {
+			$inputUserName = $_POST[self::$name];
+			$inputPassword = $_POST[self::$password];
+			$inputPasswordRepeat = $_POST[self::$passwordRepeat];
+			$users_HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
+			$usersCookie = $this->get_PHPSESSID_Cookie_Value();
+
+			if ($this->database->isUniqueUsername($inputUserName)) {
+				$this->database->saveMemberToJSONFile(new \Model\Member($inputUserName, $inputPassword, $inputPasswordRepeat, $users_HTTP_USER_AGENT, $usersCookie));
+			} else {
+				throw new \Exception("User exists, pick another username.");
+			}	
+		} else {
+			throw new \Exception("One ore more fields are empty");
+		}
+	}
+
 	private function getUserName() {
 		if ($this->hasUserName()) {
 			return strip_tags($_POST[self::$name]);
 		} else {
 			return '';
 		}
-	}
-
-	public function getRegisterCredentials() : array {
-		$inputUserName = '';
-        $inputPassword = '';
-        $inputPasswordRepeat = '';
-
-		if ($this->hasUserName()) {
-			$inputUserName = $_POST[self::$name];	
-		}
-
-		if ($this->hasPassword()) {
-			$inputPassword = $_POST[self::$password];
-        }
-        
-        if ($this->hasPasswordRepeat()) {
-			$inputPasswordRepeat = $_POST[self::$passwordRepeat];
-        }
-
-		return array($inputUserName, $inputPassword, $inputPasswordRepeat);
 	}
 
 	private function hasUserName() : bool {
@@ -119,5 +128,11 @@ class RegisterView {
     
     private function hasPasswordRepeat() : bool {
 		return (isset($_POST[self::$passwordRepeat]) && !empty($_POST[self::$passwordRepeat]));
+	}
+
+	private function get_PHPSESSID_Cookie_Value() {
+		if(isset($_COOKIE["PHPSESSID"])){
+			return $_COOKIE["PHPSESSID"];
+		}
 	}
 }

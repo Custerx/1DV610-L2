@@ -7,10 +7,16 @@ class Member {
     private static $passWord;
     private static $cookie;
     private static $HTTP_USER_AGENT;
+    
+    private $registerModel;
 
-    public function __construct(string $a_username, string $a_password) {
-        self::$userName = $this->encrypt($a_username);
-        self::$passWord = $this->encrypt($a_password);
+    public function __construct(string $a_username, string $a_password, string $a_repeatPassword, string $a_HTTP_USER_AGENT, string $a_cookie) {
+      $this->registerModel = new \Model\RegisterModel($a_username, $a_password, $a_repeatPassword);
+
+      self::$userName = $this->encrypt($a_username);
+      self::$passWord = $this->encrypt($a_password);
+      self::$HTTP_USER_AGENT = $this->encrypt($a_HTTP_USER_AGENT);
+      self::$cookie = $this->encrypt($a_cookie);
     }
 
     public function getUsername() {
@@ -28,7 +34,7 @@ class Member {
     public function getHTTP_USER_AGENT() {
 		  return self::$HTTP_USER_AGENT;
     }
-    
+
     public function setCookie($a_cookie) {
 		  self::$cookie = $this->encrypt($a_cookie);
     }

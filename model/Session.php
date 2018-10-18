@@ -34,19 +34,19 @@ class Session {
 		}
 	}
 
-	public function setSessionMessage($message) {
-        $_SESSION["message"] = $message;
+	public function setRegisteredUsername($username) {
+        $_SESSION["username"] = $username;
 	}
 
-	public function unsetSessionMessage() {
-		if (isset($_SESSION["message"])) {
-			unset($_SESSION["message"]);
+	public function unsetRegisteredUsername() {
+		if (isset($_SESSION["username"])) {
+			unset($_SESSION["username"]);
 		}
 	}
 	
-    public function getSessionMessage() {
-        if(isset($_SESSION["message"]) && strlen($_SESSION["message"]) > 0){
-            return $_SESSION["message"];
+    public function getRegisteredUsername() {
+        if(isset($_SESSION["username"]) && strlen($_SESSION["username"]) > 0){
+            return $_SESSION["username"];
         }
         else {
             return "";
@@ -58,7 +58,15 @@ class Session {
             return $_SESSION["loggedIn"];
         }
         return false;
-    }
+	}
+	
+	public function userLogsOut() {
+		$this->setSessionKey("loggedIn", false);
+	}
+
+	public function userLogsIn() {
+		$this->setSessionKey("loggedIn", true);
+	}
 
 	public function addCookie($cookieName, $cookieValue) {
 		setcookie($cookieName, $cookieValue, time() + (86400 * 30), '/');
