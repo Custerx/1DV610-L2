@@ -15,7 +15,7 @@ class Member {
     public function __construct($a_username, $a_password, $a_repeatPassword, $a_HTTP_USER_AGENT, $a_cookiePassword) {
       $this->registerModel = new \Model\RegisterModel($a_username, $a_password, $a_repeatPassword);
       $this->env = new \Env\Environment();
-      $this->$SALT_STRING = $this->env->getSaltString();
+      $this->SALT_STRING = $this->env->getSaltString();
 
       self::$userName = $this->encryptWithCrypt($a_username);
       self::$passWord = $this->encryptWithCrypt($a_password);
