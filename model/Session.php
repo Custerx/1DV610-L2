@@ -5,9 +5,13 @@ namespace Model;
 class Session {	
 	public function __construct() {
 		if (session_status() == PHP_SESSION_NONE) {
-			ini_set('session.cookie_httponly', true); // Disallow access to session cookie by Javascript.
-			ini_set('session.use_trans_sid', false); // Removing possibility of session ID injection and session ID leak.
-			ini_set('session.use_only_cookies', true); // Prevents session module to use session ID values set by GET/POST/URL when session ID cookie is not initialized. 
+			// Disallow access to session cookie by Javascript.
+			ini_set('session.cookie_httponly', true); 
+			// Removing possibility of session ID injection and session ID leak.
+			ini_set('session.use_trans_sid', false); 
+			// Prevents session module to use session ID values set by GET/POST/URL 
+			// when session ID cookie is not initialized. 
+			ini_set('session.use_only_cookies', true); 
 			session_start();
 		}
 	}

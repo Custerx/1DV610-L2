@@ -8,7 +8,8 @@ class AccountView {
 	private static $passwordRepeat = 'AccountView::PasswordRepeat';
 	private static $name = 'AccountView::UserName';
 	private static $password = 'AccountView::Password';
-    private static $messageEdit = 'AccountView::Message';
+	private static $messageEdit = 'AccountView::Message';
+	private static $placeHolder = "Rogge";
     
     private $messageFromException = '';
 	private $session;
@@ -84,14 +85,15 @@ class AccountView {
 		$cookiePassword = $this->database->generateRandomPassword();
 
 		if ($this->database->isUniqueUsername($inputUserName)) {
-			$this->database->saveMemberToJSONFile(new \Model\Member($inputUserName, $inputPassword, $inputPasswordRepeat, $users_HTTP_USER_AGENT, $cookiePassword));
+			$this->database->saveMemberToJSONFile(new \Model\Member($inputUserName, $inputPassword, 
+				$inputPasswordRepeat, $users_HTTP_USER_AGENT, $cookiePassword));
 		} else {
 			throw new \Exception("User exists, pick another username.");
 		}
     }
     // TODO : Create previous username getter.
     public function deleteOldAccountDetails() {
-        $usernameHashed = $this->database->encryptWithCrypt("Rogge");
+        $usernameHashed = $this->database->encryptWithCrypt(self::$placeHolder);
         $this->database->deleteMember($usernameHashed);
     }
     

@@ -29,21 +29,21 @@ class RegisterView {
 	private function generateRegistrationFormHTML($message) {
 		return '
 			<form method="post" action="?register"> 
-				<fieldset>
-					<legend>Register a new user - enter Username and password</legend>
-					<p id="' . self::$messageId . '">' . $message . '</p>
+			<fieldset>
+				<legend>Register a new user - enter Username and password</legend>
+				<p id="' . self::$messageId . '">' . $message . '</p>
 					
-					<label for="' . self::$name . '">Username :</label>
-					<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getUserName() . '" />
+				<label for="' . self::$name . '">Username :</label>
+				<input type="text" id="' . self::$name . '" name="' . self::$name . '" value="' . $this->getUserName() . '" />
 
-					<label for="' . self::$password . '">Password :</label>
-					<input type="password" id="' . self::$password . '" name="' . self::$password . '"  />
+				<label for="' . self::$password . '">Password :</label>
+				<input type="password" id="' . self::$password . '" name="' . self::$password . '"  />
 
-					<label for="' . self::$passwordRepeat . '">Repeat password  :</label>
-					<input type="password" id="' . self::$passwordRepeat . '" name="' . self::$passwordRepeat . '" />
+				<label for="' . self::$passwordRepeat . '">Repeat password  :</label>
+				<input type="password" id="' . self::$passwordRepeat . '" name="' . self::$passwordRepeat . '" />
 
-					<input type="submit" name="' . self::$register . '" value="register" />
-				</fieldset>
+				<input type="submit" name="' . self::$register . '" value="register" />
+			</fieldset>
 			</form>
 		';
 	}
@@ -67,7 +67,8 @@ class RegisterView {
 		$cookiePassword = $this->database->generateRandomPassword();
 
 		if ($this->database->isUniqueUsername($inputUserName)) {
-			$this->database->saveMemberToJSONFile(new \Model\Member($inputUserName, $inputPassword, $inputPasswordRepeat, $users_HTTP_USER_AGENT, $cookiePassword));
+			$this->database->saveMemberToJSONFile(new \Model\Member($inputUserName, $inputPassword, 
+				$inputPasswordRepeat, $users_HTTP_USER_AGENT, $cookiePassword));
 		} else {
 			throw new \Exception("User exists, pick another username.");
 		}

@@ -8,7 +8,8 @@ class CreateTestMember {
     private static $cookie = "fakeCookie";
 
     public function randomMember() {
-        return new \Model\Member($this->randomUsername(), self::$passWord, self::$passWord, self::$HTTP_USER_AGENT, self::$cookie);
+        return new \Model\Member($this->randomUsername(), self::$passWord, 
+            self::$passWord, self::$HTTP_USER_AGENT, self::$cookie);
     }
 
     private function randomUsername() : string {

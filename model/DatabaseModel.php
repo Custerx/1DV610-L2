@@ -44,7 +44,9 @@ class DatabaseModel {
         }
     }
 
-    public function checkCredentials(string $a_username, string $a_password, string $a_HTTP_USER_AGENT, bool $a_loginWithCookie = false, string $a_cookiePassword = "placeholder") {
+    public function checkCredentials(string $a_username, string $a_password, string $a_HTTP_USER_AGENT, 
+        bool $a_loginWithCookie = false, string $a_cookiePassword = "placeholder") {
+        
         $member = $this->findMemberByUsername($a_username, $a_loginWithCookie);
 
         if ($this->correctPassword($a_password, $member)) {
@@ -198,7 +200,7 @@ class DatabaseModel {
     }
 
     private function createAdminMember() { // Just for testing, not placing in Environment.php
-        $this->saveMemberToJSONFile(new \Model\Member("Admin", "Password", "Password", $this->getNoSpacedHTTP_USER_AGENT(), "fakeCookie"));
+        $this->saveMemberToJSONFile(new \Model\Member("Admin", "Password", "Password", $this->getNoSpacedHTTP_USER_AGENT(), "fatCookie"));
     }
 
     private function getNoSpacedHTTP_USER_AGENT() {
