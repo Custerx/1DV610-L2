@@ -31,13 +31,13 @@ A user is authenticated. UC1. UC5.
 4. The system presents the new username and an edit account button.
 5. System presents a success message.
 #### Alternate Scenario
-2a. User fills in wrong username, password or repeatpassword.
+3a. User fills in wrong username, password or repeatpassword.
     i. System presents an error message.
     ii. Step 2 in main scenario.
 
 ## Criteria 3
 Refactored nearly my entire code that previously (L2) reached 96%.
-I have been thinking about information expert, read it like a book and no string dependancies and such.
+I have been thinking about information expert, read it like a newspaper and no string dependancies and such.
 
 ### Install
 Rename Environment.php.default to Environment.php.
