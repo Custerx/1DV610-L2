@@ -33,7 +33,7 @@ A user is authenticated. UC1. UC5.
 #### Alternate Scenario
 2a. User fills in wrong username, password or repeatpassword.
     i. System presents an error message.
-    ii. Step 4 in main scenario.
+    ii. Step 2 in main scenario.
 
 ## Criteria 3
 Refactored nearly my entire code that previously (L2) reached 96%.
