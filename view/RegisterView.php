@@ -13,11 +13,6 @@ class RegisterView {
 	private $database;
 	private $messageFromException = '';
 
-	/**
-	 * Construct function
-	 *
-	 * @param \Model\Session $startSession and \Model\Auth $auth
-	 */
 	public function __construct(\Model\Session $startSession, \Model\DatabaseModel $a_database) {
 		$this->session = $startSession;
 		$this->database = $a_database;
@@ -76,21 +71,17 @@ class RegisterView {
 		}
 	}
 	// Placed here due to high abstraction level and strong connection to userSuccessfullyRegistered.
-	private function tryToregisterUser() {
-		if ($this->hasUserName() && $this->hasPassword() && $this->hasPasswordRepeat()) {
-			$inputUserName = $_POST[self::$name];
-			$inputPassword = $_POST[self::$password];
-			$inputPasswordRepeat = $_POST[self::$passwordRepeat];
-			$users_HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
-			$usersCookie = $this->get_PHPSESSID_Cookie_Value();
+	private function tryToregisterUser() {				
+		$inputUserName = $_POST[self::$name];
+		$inputPassword = $_POST[self::$password];
+		$inputPasswordRepeat = $_POST[self::$passwordRepeat];
+		$users_HTTP_USER_AGENT = $this->noSpacedHTTP_USER_AGENT();
+		$cookiePassword = $this->database->generateRandomPassword();
 
-			if ($this->database->isUniqueUsername($inputUserName)) {
-				$this->database->saveMemberToJSONFile(new \Model\Member($inputUserName, $inputPassword, $inputPasswordRepeat, $users_HTTP_USER_AGENT, $usersCookie));
-			} else {
-				throw new \Exception("User exists, pick another username.");
-			}	
+		if ($this->database->isUniqueUsername($inputUserName)) {
+			$this->database->saveMemberToJSONFile(new \Model\Member($inputUserName, $inputPassword, $inputPasswordRepeat, $users_HTTP_USER_AGENT, $cookiePassword));
 		} else {
-			throw new \Exception("One ore more fields are empty");
+			throw new \Exception("User exists, pick another username.");
 		}
 	}
 
@@ -104,6 +95,13 @@ class RegisterView {
 
 	public function redirectToLoginPage() {
 		header("location:?login");
+	}
+
+	private function noSpacedHTTP_USER_AGENT() {
+		$HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
+		$HTTP_USER_AGENT = str_replace(' ', '', $HTTP_USER_AGENT);
+		$HTTP_USER_AGENT = substr($HTTP_USER_AGENT, 21, 33);
+		return $HTTP_USER_AGENT;
 	}
 
 	private function userWantsToRegister() : bool {
@@ -122,12 +120,16 @@ class RegisterView {
 		return (isset($_POST[self::$name]) && !empty($_POST[self::$name]));
 	}
 
-	private function hasPassword() : bool {
-		return (isset($_POST[self::$password]) && !empty($_POST[self::$password]));
+	private function postedEmptyUsername() : bool {
+		return (isset($_POST[self::$name]) && empty($_POST[self::$name]));
+	}
+
+	private function postedEmptyPassword() : bool {
+		return (isset($_POST[self::$password]) && empty($_POST[self::$password]));
     }
     
-    private function hasPasswordRepeat() : bool {
-		return (isset($_POST[self::$passwordRepeat]) && !empty($_POST[self::$passwordRepeat]));
+    private function postedEmptyPasswordRepeat() : bool {
+		return (isset($_POST[self::$passwordRepeat]) && empty($_POST[self::$passwordRepeat]));
 	}
 
 	private function get_PHPSESSID_Cookie_Value() {

@@ -43,18 +43,12 @@ class DatabaseModel {
         }
     }
 
-    public function checkCredentials(string $a_username, string $a_password, string $a_HTTP_USER_AGENT) {
-        
-        if ($a_username == "Admin" && $a_password == "Password") { // Admin is considered an exception. Any browser can login with these credentials.
-            $this->session->userLogsIn();
-            return;
-        }
-
-        $member = $this->findMemberByUsername($a_username);
+    public function checkCredentials(string $a_username, string $a_password, string $a_HTTP_USER_AGENT, bool $a_loginWithCookie = false, string $a_cookiePassword = "placeholder") {
+        $member = $this->findMemberByUsername($a_username, $a_loginWithCookie);
 
         if ($this->correctPassword($a_password, $member)) {
         } else {
-            throw new \Exception("Wrong name or password");
+            $this->throwExceptions($a_loginWithCookie);
         }
 
         if ($this->noHiJackingAttempt($a_HTTP_USER_AGENT, $member)) {
@@ -65,8 +59,10 @@ class DatabaseModel {
         }      
     }
 
-    public function isUniqueUsername(string $a_username) : bool {
-        if (file_exists($this->file)) {
+    public function isUniqueUsername($a_username) : bool {
+        if ($a_username == null) {
+            return true;
+        } else if (file_exists($this->file)) {
             return $this->isUsernameAvailable($a_username);
         } else {
             return true;
@@ -76,8 +72,18 @@ class DatabaseModel {
     public function encryptWithCrypt($a_toBeEncrypted) {
         return crypt($a_toBeEncrypted, self::$SALT_STRING);
     }
+    // https://stackoverflow.com/questions/33134021/generate-a-random-password-in-php
+    public function generateRandomPassword($length = 8) {
+        $string = "";
+        $chars = "abcdefghijklmanopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        $size = strlen($chars);
+        for ($i = 0; $i < $length; $i++) {
+            $string .= $chars[rand(0, $size - 1)];
+        }
+        return $string; 
+    }
 
-    private function findMemberByUsername(string $a_username) {
+    private function findMemberByUsername(string $a_username, bool $a_loginWithCookie = false) {
         $members_ = $this->loadJSONFile();
 
         $findMemberByUsername = function($a_findUsername) use ($members_) {
@@ -87,7 +93,7 @@ class DatabaseModel {
                 }
             }
             
-            throw new \Exception("Wrong name or password");
+            $this->throwExceptions($a_loginWithCookie = false);
         };
 
         return $findMemberByUsername($a_username);
@@ -95,6 +101,7 @@ class DatabaseModel {
 
     private function isUsernameAvailable(string $a_username) : bool {
         $members_ = $this->loadJSONFile();
+        $usernamedHashed = $this->encryptWithCrypt($a_username);
 
         $findUsername = function($a_findUsername) use ($members_) {
             foreach ($members_ as $member) {
@@ -106,7 +113,7 @@ class DatabaseModel {
             return true;
         };
 
-        return $findUsername($a_username);
+        return $findUsername($usernamedHashed);
     }
 
     private function loadJSONFile() {
@@ -132,7 +139,7 @@ class DatabaseModel {
     private function createMember(\Model\Member $a_member) {
         $member["username"] = $a_member->getUsername();
         $member["password"] = $a_member->getPassword();
-        $member["cookie"] = $a_member->getCookie();
+        $member["cookiePassword"] = $a_member->getCookiePassword();
         $member["HTTP_USER_AGENT"] = $a_member->getHTTP_USER_AGENT();
         return $member;
     }
@@ -146,6 +153,14 @@ class DatabaseModel {
         }
     }
 
+    private function throwExceptions(bool $a_loginWithCookie = false) {
+        if($a_loginWithCookie) {
+            throw new \Exception("Wrong information in cookies");
+        } else {
+            throw new \Exception("Wrong name or password");
+        }
+    }
+
     private function noHiJackingAttempt($a_HTTP_USER_AGENT, $member) : bool {
         return hash_equals($member->HTTP_USER_AGENT, $a_HTTP_USER_AGENT);
     }
@@ -153,12 +168,25 @@ class DatabaseModel {
     private function correctPassword($a_password, $member) : bool {
         return hash_equals($member->password, $a_password);
     }
+    // TOD : Edit cookiepassword in database.
+    private function correctCookiePassword($a_Cookiepassword, $member) : bool {
+        return hash_equals($member->CookiePassword, $a_Cookiepassword);
+    }
 
     private function ifFileDoNotExist() : bool {
         return !file_exists($this->file);
     }
 
     private function createAdminMember() {
-        $this->saveMemberToJSONFile(new \Model\Member("Admin", "Password", "Password", "fakeUserAgent", "fakeCookie"));
+        $this->saveMemberToJSONFile(new \Model\Member("Admin", "Password", "Password", $this->getNoSpacedHTTP_USER_AGENT(), "fakeCookie"));
+    }
+
+    private function getNoSpacedHTTP_USER_AGENT() {
+		$HTTP_USER_AGENT = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13";
+        $HTTP_USER_AGENT = str_replace(' ', '', $HTTP_USER_AGENT);
+        // Crypt hash_equals() is limited when comparing long strings.
+        // TODO : Change encryption system when comparing user agents and passwords.
+        $HTTP_USER_AGENT = substr($HTTP_USER_AGENT, 21, 33);
+        return $HTTP_USER_AGENT;
     }
 }

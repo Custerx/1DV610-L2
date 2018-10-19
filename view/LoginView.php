@@ -17,11 +17,6 @@ class LoginView {
 	private $database;
 	private $messageFromException = '';
 	
-	/**
-	 * Construct function
-	 *
-	 * @param \Model\Session $startSession and \Model\Auth $auth
-	 */
 	public function __construct(\Model\Session $startSession, \Model\DatabaseModel $a_database) {
 		$this->session = $startSession;
 		$this->database = $a_database;
@@ -92,6 +87,7 @@ class LoginView {
 			if($this->userWantsToLogin()) {
 				$this->tryToLoginUser();
 				$this->setLoginMessage();
+				$this->addUsernameToSession();
 			}
 		} catch (\Exception $e) {
             $this->messageFromException = $e->getMessage();
@@ -109,9 +105,10 @@ class LoginView {
 		// Encrypt information so it can be compared with database information using hash_equals.
 		$inputUserName = $this->database->encryptWithCrypt($_POST[self::$name]);
 		$inputPassword = $this->database->encryptWithCrypt($_POST[self::$password]);
-		$users_HTTP_USER_AGENT = $this->database->encryptWithCrypt($_SERVER['HTTP_USER_AGENT']);
+		$users_HTTP_USER_AGENT = $this->getHashedNoSpacedHTTP_USER_AGENT();
+		$loginWithCookie = false;
 
-		$this->database->checkCredentials($inputUserName, $inputPassword, $users_HTTP_USER_AGENT);
+		$this->database->checkCredentials($inputUserName, $inputPassword, $users_HTTP_USER_AGENT, $loginWithCookie);
 	}
 
 	public function logoutUser() {
@@ -126,6 +123,7 @@ class LoginView {
 	// Placed here due to strong connection to logoutUser.
 	private function tryToLogoutUser() {
 		$this->session->userLogsOut();
+		$this->delete_PHPSESSID_cookie();
 		$this->session->destroy();
 		$this->setLogoutMessage();
 	}
@@ -142,21 +140,28 @@ class LoginView {
 	private function tryToLoginUserWithCookie() {
         $cookieName = $this->getCookieNameForUsername();
         $cookiePassword = $this->getCookieNameForPassword();
-		$cookieValuePasswordHashed = $this->getCookieValue($cookiePassword);
-		$cookieValueUsernameHashed = $this->getCookieValue($cookieName);
-		$users_HTTP_USER_AGENTHashed = $this->database->encryptWithCrypt($_SERVER['HTTP_USER_AGENT']);
+		$cookieValuePassword = $this->getCookieValue($cookiePassword);
+		$cookieValueUsername = $this->getCookieValue($cookieName);
+		$users_HTTP_USER_AGENT = $this->getHashedNoSpacedHTTP_USER_AGENT();
+		$loginWithCookie = true;
 
-		$this->database->checkCredentials($cookieValueUsernameHashed, $cookieValuePasswordHashed, $users_HTTP_USER_AGENTHashed);
+		$this->database->checkCredentials($cookieValueUsername, $cookieValuePassword, $users_HTTP_USER_AGENT, $loginWithCookie);
 	}
 	
 	public function sendCookieToUser() {
-        $cookieValueUserName = $this->database->encryptWithCrypt($_POST[self::$name]);
-        $cookieValuePasswordHashed = $this->database->encryptWithCrypt($_POST[self::$password]);
-        $cookieNameUserName = $this->getCookieNameForUsername();
+		$cookieNameUserName = $this->getCookieNameForUsername();
 		$cookieNamePassword = $this->getCookieNameForPassword();
+		
+		if ($this->emptyUserName()) {
+			$cookieValuePassword = $this->getCookieValue($cookieNamePassword);
+			$cookieValueUserName = $this->getCookieValue($cookieNameUserName);
+		} else {
+			$cookieValueUserName = $this->database->encryptWithCrypt($_POST[self::$name]);
+			$cookieValuePassword = $this->database->encryptWithCrypt($_POST[self::$password]);
+		}
 
         $this->addCookie($cookieNameUserName, $cookieValueUserName);
-        $this->addCookie($cookieNamePassword, $cookieValuePasswordHashed);
+        $this->addCookie($cookieNamePassword, $cookieValuePassword);
 	}
 
 	public function authorizedUserWantsToStayLoggedIn() : bool {
@@ -200,6 +205,10 @@ class LoginView {
 		return isset($_COOKIE[$cookieName]);
 	}
 
+	public function delete_PHPSESSID_cookie() {
+		$this->deleteCookie("PHPSESSID");
+	}
+
 	private function cookieFeedbackToUser() {
         if ($this->session->isLoggedIn()) {
             $this->setAuthCookieMessage();
@@ -217,6 +226,20 @@ class LoginView {
 		$this->deleteCookie($cookieNamePassword);
 	}
 
+	private function getHashedNoSpacedHTTP_USER_AGENT() {
+		$HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
+		$HTTP_USER_AGENT = str_replace(' ', '', $HTTP_USER_AGENT);
+		$HTTP_USER_AGENT = substr($HTTP_USER_AGENT, 21, 33);
+		$hashedNoSpacedHTTP_USER_AGENT = $this->database->encryptWithCrypt($HTTP_USER_AGENT);
+		return $hashedNoSpacedHTTP_USER_AGENT;
+	}
+
+	private function addUsernameToSession() {
+		if(!$this->emptyUserName()) {
+			$this->session->setRegisteredUsername($_POST[self::$name]);
+		}
+	}
+
 	private function getUserName() {
 		if (isset($_POST[self::$name]) && !empty($_POST[self::$name])) {
 			return $_POST[self::$name];
@@ -225,6 +248,10 @@ class LoginView {
 
 	private function postEmptyUserName() : bool {
 		return (isset($_POST[self::$name]) && empty($_POST[self::$name]));
+	}
+
+	private function emptyUserName() : bool {
+		return empty($_POST[self::$name]);
 	}
 
 	private function postEmptyPassword() : bool {

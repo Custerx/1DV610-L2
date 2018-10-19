@@ -75,6 +75,7 @@ class MasterController {
 
     private function logout() {
         if ($this->session->isLoggedIn() == false) {
+            $this->session->destroy();
             $this->loginView->resetMessage();
             $this->renderView();
         } else {
@@ -89,6 +90,7 @@ class MasterController {
 
     private function doCookieManagement() {
         $this->loginView->loginUserWithCookie();
+        $this->loginView->sendCookieToUser();
         $this->renderView();
     }
 }

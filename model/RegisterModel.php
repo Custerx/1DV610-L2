@@ -7,7 +7,7 @@ class RegisterModel {
 	private static $password;
 	private static $repeatPassword;
 
-	public function __construct(string $a_username, string $a_password, string $a_repeatPassword) {
+	public function __construct($a_username, $a_password, $a_repeatPassword) {
 		self::$username = $a_username;
 		self::$password = $a_password;
 		self::$repeatPassword = $a_repeatPassword;
