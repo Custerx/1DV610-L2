@@ -1,0 +1,13 @@
+<?php
+
+namespace Env;
+
+class Environment {
+    public function getSaltString() : string {
+        return "yourSaltString";
+    }
+
+    public function getFileLocation() {
+        return getenv("DOCUMENT_ROOT") . "/youFileName.json";
+    }
+}

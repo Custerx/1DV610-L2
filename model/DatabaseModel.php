@@ -3,17 +3,18 @@
 namespace Model;
 
 class DatabaseModel {
-    private static $SALT_STRING = "sagfsd987234009987fashdnakhd0834809471283jhdfoiahfd74q02u";
-
     private $file;
     private $createTestMember;
     private $session;
+    private $env;
+    private $SALT_STRING;
 
-    public function __construct(\Model\Session $a_session) {
+    public function __construct(\Model\Session $a_session, \Env\Environment $a_env) {
         $this->session = $a_session;
-        $this->file = getenv("DOCUMENT_ROOT") . "/database.json";
         $this->createTestMember = new \Test\CreateTestMember();
-
+        $this->env = $a_env;
+        $this->SALT_STRING = $this->env->getSaltString();
+        $this->file = $this->env->getFileLocation();
 
         if ($this->ifFileDoNotExist()) {
             try {
@@ -69,9 +70,28 @@ class DatabaseModel {
         }
     }
 
-    public function encryptWithCrypt($a_toBeEncrypted) {
-        return crypt($a_toBeEncrypted, self::$SALT_STRING);
+    // TODO : Deletemember function is not working atm.
+    public function deleteMember($a_username) {
+        $members_ = $this->loadJSONFileAsArray();
+
+        foreach($members_ as $member) { 
+            if (hash_equals($member["username"], $a_username)) {      
+                unset($members_[$member["username"]]); //Delete member from Array
+                unset($members_[$member["password"]]);
+                unset($members_[$member["cookiePassword"]]);
+                unset($members_[$member["HTTP_USER_AGENT"]]);
+
+                $members_ = array_values($members_); // Index kept intact with unset. array_values force re-indexed seq.
+            }
+        }
+
+        $this->saveToJSONFile($members_);
     }
+
+    public function encryptWithCrypt($a_toBeEncrypted) {
+        return crypt($a_toBeEncrypted, $this->SALT_STRING);
+    }
+
     // https://stackoverflow.com/questions/33134021/generate-a-random-password-in-php
     public function generateRandomPassword($length = 8) {
         $string = "";
@@ -177,7 +197,7 @@ class DatabaseModel {
         return !file_exists($this->file);
     }
 
-    private function createAdminMember() {
+    private function createAdminMember() { // Just for testing, not placing in Environment.php
         $this->saveMemberToJSONFile(new \Model\Member("Admin", "Password", "Password", $this->getNoSpacedHTTP_USER_AGENT(), "fakeCookie"));
     }
 

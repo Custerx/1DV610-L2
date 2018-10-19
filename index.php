@@ -10,6 +10,7 @@ require_once('view/RegisterView.php');
 require_once('model/RegisterModel.php');
 require_once('model/Member.php');
 require_once('test/CreateTestMember.php');
+require_once('view/AccountView.php');
 
 //MAKE SURE ERRORS ARE SHOWN... MIGHT WANT TO TURN THIS OFF ON A PUBLIC SERVER
 error_reporting(E_ALL);

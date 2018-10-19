@@ -22,13 +22,6 @@ class LoginView {
 		$this->database = $a_database;
 	}
 
-	/**
-	 * Create HTTP response
-	 *
-	 * Should be called after a login attempt has been determined
-	 *
-	 * @return  void BUT writes to standard output and cookies!
-	 */
 	public function response() {
 		$message = $this->messageFromException;
 
@@ -41,11 +34,6 @@ class LoginView {
 		return $response;
 	}
 
-	/**
-	* Generate HTML code on the output buffer for the logout button
-	* @param $message, String output message
-	* @return  void, BUT writes to standard output!
-	*/
 	private function generateLogoutButtonHTML($message) {
 		return '
 			<form  method="post" >
@@ -55,11 +43,6 @@ class LoginView {
 		';
 	}
 
-	/**
-	* Generate HTML code on the output buffer for the logout button
-	* @param $message, String output message
-	* @return  void, BUT writes to standard output!
-	*/
 	private function generateLoginFormHTML($message) {
 		return '
 			<form method="post" class="form" id="loginForm"> 
@@ -256,12 +239,6 @@ class LoginView {
 
 	private function postEmptyPassword() : bool {
 		return (isset($_POST[self::$password]) && empty($_POST[self::$password]));
-	}
-
-	private function get_PHPSESSID_Cookie_Value() {
-		if(isset($_COOKIE["PHPSESSID"])){
-			return $_COOKIE["PHPSESSID"];
-		}
 	}
 
 	private function userWantsToKeepLogin() : bool {

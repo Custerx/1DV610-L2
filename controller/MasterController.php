@@ -9,18 +9,26 @@ class MasterController {
     private $layoutView;
     private $session;
     private $database;
+    private $env;
 
 	public function __construct() {
+        $this->env = new \Env\Environment();
         $this->session = new \Model\Session();
-        $this->database = new \Model\DatabaseModel($this->session);
+        $this->database = new \Model\DatabaseModel($this->session, $this->env);
         $this->loginView = new \View\LoginView($this->session, $this->database);
         $this->registerView = new \View\RegisterView($this->session, $this->database);
         $this->dateTimeView = new \View\DateTimeView();
         $this->layoutView = new \View\LayoutView();
+        $this->accountView = new \View\AccountView($this->session, $this->database);
     }
 
     public function routerHandler() {
-        if ($this->registerView->userWantsToViewRegisterPage()) {
+        if ($this->accountView->userWantsToConfirmAccountDetails() && $this->session->isLoggedIn())
+            $this->doEditManagement();
+        else if ($this->accountView->userWantsToEditAccountDetails() && $this->session->isLoggedIn()) {
+            $this->session->startEditMode();
+            $this->renderView();
+        } else if ($this->registerView->userWantsToViewRegisterPage()) {
             $this->doRegisterManagement();
         } else if (!empty($_POST)) {
             $this->doLoginManagement();
@@ -29,6 +37,17 @@ class MasterController {
             $this->renderView();
         } else if ($this->loginView->hasCookiesForUsernameAndPassword() && $this->loginView->hasNoSessionCookie()) {
             $this->doCookieManagement();
+        } else {
+            $this->renderView();
+        }
+    }
+
+    private function doEditManagement() {
+        if ($this->accountView->successfullEdit()) {
+            $this->session->stopEditMode();
+            $this->accountView->showNewUsername();
+            $this->accountView->successfullEditMessage();
+            $this->renderView();
         } else {
             $this->renderView();
         }
@@ -85,7 +104,7 @@ class MasterController {
     }
 
     private function renderView() {
-        return $this->layoutView->render($this->session->isLoggedIn(), $this->loginView, $this->dateTimeView);
+        return $this->layoutView->render($this->session->isLoggedIn(), $this->loginView, $this->dateTimeView, $this->accountView);
     }
 
     private function doCookieManagement() {

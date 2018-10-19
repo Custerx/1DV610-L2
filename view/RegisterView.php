@@ -18,26 +18,14 @@ class RegisterView {
 		$this->database = $a_database;
 	}
 
-	/**
-	 * Create HTTP response
-	 *
-	 * Should be called after a register attempt has been determined
-	 *
-	 * @return  void BUT writes to standard output and cookies!
-	 */
 	public function response() {
-		$message = $this->messageFromException; // TODO : Add solution to handle messages.
+		$message = $this->messageFromException;
 
 		$response = $this->generateRegistrationFormHTML($message);
 
 		return $response;
 	}
 
-	/**
-	* Generate HTML code on the output buffer for the logout button
-	* @param $message, String output message
-	* @return  void, BUT writes to standard output!
-	*/
 	private function generateRegistrationFormHTML($message) {
 		return '
 			<form method="post" action="?register"> 
@@ -118,23 +106,5 @@ class RegisterView {
 
 	private function hasUserName() : bool {
 		return (isset($_POST[self::$name]) && !empty($_POST[self::$name]));
-	}
-
-	private function postedEmptyUsername() : bool {
-		return (isset($_POST[self::$name]) && empty($_POST[self::$name]));
-	}
-
-	private function postedEmptyPassword() : bool {
-		return (isset($_POST[self::$password]) && empty($_POST[self::$password]));
-    }
-    
-    private function postedEmptyPasswordRepeat() : bool {
-		return (isset($_POST[self::$passwordRepeat]) && empty($_POST[self::$passwordRepeat]));
-	}
-
-	private function get_PHPSESSID_Cookie_Value() {
-		if(isset($_COOKIE["PHPSESSID"])){
-			return $_COOKIE["PHPSESSID"];
-		}
 	}
 }

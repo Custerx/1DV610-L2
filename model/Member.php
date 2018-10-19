@@ -7,12 +7,15 @@ class Member {
     private static $passWord;
     private static $cookiePassword;
     private static $HTTP_USER_AGENT;
-    private static $SALT_STRING = "sagfsd987234009987fashdnakhd0834809471283jhdfoiahfd74q02u";
     
     private $registerModel;
+    private $env;
+    private $SALT_STRING;
 
     public function __construct($a_username, $a_password, $a_repeatPassword, $a_HTTP_USER_AGENT, $a_cookiePassword) {
       $this->registerModel = new \Model\RegisterModel($a_username, $a_password, $a_repeatPassword);
+      $this->env = new \Env\Environment();
+      $this->$SALT_STRING = $this->env->getSaltString();
 
       self::$userName = $this->encryptWithCrypt($a_username);
       self::$passWord = $this->encryptWithCrypt($a_password);
@@ -45,6 +48,6 @@ class Member {
     }
 
     private function encryptWithCrypt($a_toBeEncrypted) {
-      return crypt($a_toBeEncrypted, self::$SALT_STRING);
+      return crypt($a_toBeEncrypted, $this->SALT_STRING);
     }
 }

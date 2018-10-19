@@ -27,6 +27,21 @@ class Session {
 		$this->setSessionKey("loggedIn", true);
 	}
 
+	public function isEditModeActivated() {
+        if(isset($_SESSION["editMode"])){
+            return $_SESSION["editMode"];
+        }
+        return false;
+	}
+
+	public function stopEditMode() {
+		$this->setSessionKey("editMode", false);
+	}
+
+	public function startEditMode() {
+		$this->setSessionKey("editMode", true);
+	}
+
 	public function destroy() {
 		session_destroy();
 	}

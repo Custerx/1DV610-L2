@@ -3,7 +3,7 @@
 namespace View;
 
 class LayoutView { 
-  public function render($isLoggedIn, LoginView $v, DateTimeView $dtv) {
+  public function render($isLoggedIn, LoginView $v, DateTimeView $dtv, AccountView $a) {
     echo '<!DOCTYPE html>
       <html>
         <head>
@@ -18,6 +18,8 @@ class LayoutView {
               ' . $v->response() . '
               
               ' . $dtv->show() . '
+
+              ' . $this->renderAccountView($isLoggedIn, $a) . '
           </div>
          </body>
       </html>
@@ -66,6 +68,12 @@ class LayoutView {
       <a href="?">Back to login</a>
       <h2>Not logged in</h2>
       ';
+    }
+  }
+
+  private function renderAccountView($isLoggedIn, AccountView $a) {
+    if ($isLoggedIn) {
+      return $a->response();
     }
   }
 }
